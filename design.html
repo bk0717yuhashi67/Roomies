@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>合租生活管家 · 产品设计方案</title>
+<meta name="description" content="面向年轻合租群体的网页端产品「合租生活管家」——产品定位、功能结构、核心功能详述、关键页面与交互、差异化设计。">
+<style>
+:root{
+  --bg:#F6F8F6;
+  --surface:#FFFFFF;
+  --surface-2:#FAFCFB;
+  --ink:#14211D;
+  --ink-2:#3E5049;
+  --ink-3:#77887F;
+  --line:#E2E8E4;
+  --line-2:#EEF2EF;
+  --primary:#1E7A63;
+  --primary-2:#2A9C80;
+  --primary-soft:#E6F3EF;
+  --accent:#C9761F;
+  --accent-soft:#FBF0E1;
+  --blue:#2B6CB0;
+  --blue-soft:#E9F1F9;
+  --red:#B84C43;
+  --red-soft:#FAEBE9;
+  --radius:14px;
+  --radius-sm:10px;
+  --shadow:0 1px 2px rgba(20,33,29,.04), 0 10px 28px -14px rgba(20,33,29,.16);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- Hero ---------- */
+.hero{
+  background:
+    radial-gradient(900px 340px at 12% -10%, #DFF0EA 0%, rgba(223,240,234,0) 70%),
+    radial-gradient(700px 300px at 92% 0%, #FBEFD9 0%, rgba(251,239,217,0) 72%),
+    var(--surface);
+  border-bottom:1px solid var(--line);
+  padding:44px 0 38px;
+}
+.hero-in{max-width:1240px;margin:0 auto;padding:0 28px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.08em;
+  color:var(--primary);background:var(--primary-soft);border:1px solid #CFE6DF;
+  padding:4px 12px;border-radius:99px;font-weight:600;
+}
+.hero h1{font-size:40px;line-height:1.2;margin:16px 0 10px;letter-spacing:-.6px}
+.hero h1 small{display:block;font-size:15px;font-weight:500;color:var(--ink-3);letter-spacing:0;margin-top:10px}
+.hero-lead{max-width:760px;margin:0;color:var(--ink-2);font-size:16px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.hero-cta{display:inline-flex;align-items:center;gap:8px;margin-top:22px;background:var(--primary);color:#fff;font-weight:700;font-size:14.5px;padding:11px 24px;border-radius:11px;box-shadow:0 10px 22px -12px rgba(30,122,99,.75);text-decoration:none}
+.hero-cta:hover{background:#1A6B57;text-decoration:none}
+.hero-cta span{font-weight:400;opacity:.75;font-size:13px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 13px;font-size:12.5px;color:var(--ink-2)}
+.chip b{color:var(--ink);font-weight:700}
+
+/* ---------- Layout ---------- */
+.shell{max-width:1240px;margin:0 auto;padding:0 28px 90px;display:grid;grid-template-columns:236px minmax(0,1fr);gap:44px;align-items:start}
+.toc{position:sticky;top:24px;padding-top:44px;font-size:13px}
+.toc-h{font-size:11px;letter-spacing:.12em;color:var(--ink-3);font-weight:700;margin:0 0 10px 12px}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc li{margin:0}
+.toc a{display:block;padding:6px 0 6px 13px;color:var(--ink-2);border-left:2px solid transparent;margin-left:-1.5px;line-height:1.45}
+.toc a:hover{color:var(--primary);background:var(--primary-soft)}
+.toc a.on{color:var(--primary);font-weight:700;border-left-color:var(--primary)}
+main{padding-top:44px;min-width:0}
+
+/* ---------- Section ---------- */
+section{margin-bottom:64px;scroll-margin-top:24px}
+.sec-num{font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--primary)}
+h2{font-size:27px;line-height:1.3;margin:6px 0 8px;letter-spacing:-.3px}
+h2 + .sec-sub{color:var(--ink-3);font-size:14px;margin:0 0 26px;max-width:780px}
+h3{font-size:19px;margin:36px 0 12px;line-height:1.4;display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:4px;height:17px;border-radius:2px;background:var(--primary);flex:0 0 auto}
+h4{font-size:15.5px;margin:24px 0 8px;color:var(--ink)}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin:5px 0}
+strong{font-weight:700}
+code{background:var(--primary-soft);color:#13604E;padding:1px 6px;border-radius:5px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+
+/* ---------- Cards / grid ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin:18px 0;box-shadow:var(--shadow)}
+.panel-h{font-size:15px;font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:9px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex:0 0 auto}
+.dot.a{background:var(--accent)}
+.dot.b{background:var(--blue)}
+.dot.r{background:var(--red)}
+
+.note{background:var(--accent-soft);border:1px solid #F0DCBC;border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:14px 18px;margin:16px 0;font-size:14px;color:#6B4413}
+.note b{color:#5A3810}
+.tip{background:var(--blue-soft);border:1px solid #CFE0F0;border-left:3px solid var(--blue);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:14px 18px;margin:16px 0;font-size:14px;color:#1F4F80}
+.tip b{color:#17436E}
+
+/* ---------- Table ---------- */
+.tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;font-size:12.5px;color:var(--ink-2);white-space:nowrap;letter-spacing:.02em}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#FCFDFC}
+td.y{white-space:nowrap;color:var(--ink-3);font-size:12.5px}
+
+.tag{display:inline-block;padding:1.5px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1.6}
+.t-g{background:var(--primary-soft);color:#13604E}
+.t-o{background:var(--accent-soft);color:#8A4E0E}
+.t-b{background:var(--blue-soft);color:#1F4F80}
+.t-r{background:var(--red-soft);color:#8E372F}
+.t-n{background:#F1F3F2;color:var(--ink-3)}
+
+/* ---------- Persona ---------- */
+.persona{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.avatar{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;margin-bottom:12px}
+.avatar.a{background:linear-gradient(135deg,#D08A2C,#E8AC5C)}
+.avatar.b{background:linear-gradient(135deg,#3B6FA8,#6D9DCE)}
+.avatar.c{background:linear-gradient(135deg,#8A5A9E,#B487C6)}
+.persona h4{margin:0 0 4px;font-size:16px}
+.persona .role{font-size:12px;color:var(--ink-3);margin:0 0 12px}
+.persona dl{margin:0;font-size:13.5px}
+.persona dt{font-weight:700;color:var(--ink-2);font-size:12px;letter-spacing:.04em;margin-top:10px}
+.persona dd{margin:2px 0 0;color:var(--ink-2)}
+
+/* ---------- Scenario ---------- */
+.scn{display:flex;gap:16px;padding:16px 0;border-bottom:1px dashed var(--line)}
+.scn:last-child{border-bottom:none}
+.scn-n{flex:0 0 40px;height:40px;border-radius:12px;background:var(--primary-soft);color:var(--primary);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+.scn-b{min-width:0}
+.scn-b h4{margin:4px 0 4px;font-size:15px}
+.scn-b p{margin:0;color:var(--ink-2);font-size:14px}
+.scn-b .win{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--primary);background:var(--primary-soft);border-radius:8px;padding:3px 10px}
+
+/* ---------- Feature module ---------- */
+.mod{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin:22px 0;box-shadow:var(--shadow)}
+.mod-h{display:flex;align-items:center;gap:14px;padding:16px 24px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.mod-id{flex:0 0 auto;width:38px;height:38px;border-radius:11px;background:var(--primary);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+.mod-h h3{margin:0;font-size:18px}
+.mod-h h3::before{display:none}
+.mod-h .mod-sub{font-size:12.5px;color:var(--ink-3);margin:2px 0 0}
+.mod-b{padding:20px 24px 24px}
+
+/* ---------- Flow steps ---------- */
+.flow{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.step{flex:1 1 190px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 15px;position:relative;min-width:0}
+.step .k{font-size:11px;font-weight:800;color:var(--primary);letter-spacing:.06em}
+.step h5{margin:4px 0 6px;font-size:14px}
+.step p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.6}
+
+/* ---------- Wireframes ---------- */
+.wf-scroll{display:flex;gap:20px;overflow-x:auto;padding:6px 4px 18px;scroll-snap-type:x proximity}
+.phone{flex:0 0 246px;width:246px;background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow);scroll-snap-align:start}
+.phone-top{background:var(--primary);color:#fff;padding:9px 13px 11px}
+.phone-top .pt{font-size:12.5px;font-weight:700}
+.phone-top .ps{font-size:10px;opacity:.8}
+.phone-bd{padding:11px;display:flex;flex-direction:column;gap:8px;background:#FDFEFD;min-height:420px}
+.wnav{display:flex;justify-content:space-around;border-top:1px solid var(--line-2);padding:7px 0 8px;background:var(--surface);font-size:9.5px;color:var(--ink-3)}
+.wnav span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.wnav span i{width:13px;height:13px;border-radius:4px;background:var(--line);display:block}
+.wnav span.on{color:var(--primary);font-weight:700}
+.wnav span.on i{background:var(--primary)}
+.wl{font-size:10px;color:var(--ink-3);font-weight:700;letter-spacing:.05em;margin:2px 0 -2px}
+.wb{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 9px}
+.wb.tint{background:var(--primary-soft);border-color:#D2E8E1}
+.wb.warn{background:var(--accent-soft);border-color:#F0DCBC}
+.wb .wt{font-size:11px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:center;gap:6px}
+.wb .ws{font-size:9.5px;color:var(--ink-3);margin-top:3px;line-height:1.5}
+.wrow{display:flex;gap:6px}
+.wrow > *{flex:1}
+.wpill{font-size:8.5px;padding:1px 6px;border-radius:99px;background:#EDF1EF;color:var(--ink-3);font-weight:600}
+.wpill.g{background:#D6EDE5;color:#13604E}
+.wpill.o{background:#F7E4C9;color:#8A4E0E}
+.wpill.r{background:#F7DEDA;color:#8E372F}
+.wbar{height:6px;border-radius:4px;background:#EDF1EF;overflow:hidden;margin-top:6px}
+.wbar i{display:block;height:100%;background:var(--primary)}
+.wbar i.o{background:var(--accent)}
+.wbar i.r{background:var(--red)}
+.wbtn{background:var(--primary);color:#fff;text-align:center;border-radius:8px;padding:7px;font-size:10.5px;font-weight:700}
+.wbtn.gh{background:#fff;color:var(--primary);border:1px solid #C9E2DA}
+.wfaces{display:flex;gap:4px}
+.wface{width:17px;height:17px;border-radius:50%;background:var(--line);font-size:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-weight:700}
+.wface.ok{background:#D6EDE5;color:#13604E}
+.wface.no{background:#F7DEDA;color:#8E372F}
+.wcal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.wcal div{aspect-ratio:1;border-radius:5px;background:#F1F4F2;display:flex;align-items:center;justify-content:center;font-size:8.5px;color:var(--ink-3)}
+.wcal div.me{background:var(--primary);color:#fff;font-weight:700}
+.wcal div.other{background:#DCEBE6;color:#13604E}
+.wcal div.today{outline:1.5px solid var(--accent);outline-offset:-1.5px}
+.cap{font-size:12.5px;color:var(--ink-3);text-align:center;margin-top:6px;font-weight:600}
+.wf-col{flex:0 0 246px}
+
+/* ---------- Misc ---------- */
+.kv{display:grid;grid-template-columns:88px 1fr;gap:6px 14px;font-size:14px;margin:10px 0}
+.kv dt{color:var(--ink-3);font-size:13px}
+.kv dd{margin:0;color:var(--ink-2)}
+.pill-list{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 16px}
+.pill-list span{font-size:12.5px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 12px;color:var(--ink-2)}
+.pill-list span.hl{background:var(--primary-soft);border-color:#CFE6DF;color:#13604E;font-weight:600}
+
+/* ---------- Calculator ---------- */
+.calc{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:22px}
+@media (max-width:820px){.calc{grid-template-columns:1fr}}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12.5px;color:var(--ink-3);font-weight:600;margin-bottom:5px}
+.field input,.field select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:14px;color:var(--ink);background:var(--surface);font-family:inherit}
+.field input:focus,.field select:focus{outline:2px solid var(--primary-soft);border-color:var(--primary)}
+.mrow{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--line-2);border-radius:9px;margin-bottom:7px;background:var(--surface)}
+.mrow .mn{flex:1;font-size:13.5px}
+.mrow input{width:66px;padding:5px 8px;border:1px solid var(--line);border-radius:7px;font-size:13px;text-align:center}
+.res{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.res-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.res-row:last-of-type{border-bottom:none}
+.res-row .amt{font-weight:700;font-variant-numeric:tabular-nums}
+.res-sum{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--primary);border-top:2px solid var(--primary);padding-top:11px;margin-top:6px}
+
+footer{border-top:1px solid var(--line);background:var(--surface);padding:26px 0 34px}
+.foot-in{max-width:1240px;margin:0 auto;padding:0 28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--ink-3)}
+
+@media (max-width:1040px){
+  .shell{grid-template-columns:1fr;gap:0}
+  .toc{display:none}
+  .hero h1{font-size:31px}
+  main{padding-top:32px}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <span class="eyebrow">产品设计方案 · v1.0</span>
+    <h1>合租生活管家
+      <small>Roomies — 让钱、活、物三本账，都在明面上</small>
+    </h1>
+    <p class="hero-lead">
+      面向 2–5 人合租的年轻室友群体。不做「又一个记账工具」，而是把合租里三件最容易积怨的事——<strong>谁该给钱、谁该干活、谁把东西用完了</strong>——变成四双眼睛都能看见、都能确认的事实记录。产品只提供记录、计算与提醒，不评价谁对谁错；把「开口要钱」这句话，从人嘴里挪到系统里。
+    </p>
+    <div class="hero-meta">
+      <span class="chip">形态：<b>响应式 Web（移动端优先）</b></span>
+      <span class="chip">核心用户：<b>2–5 人弱熟人合租</b></span>
+      <span class="chip">四大模块：<b>费用 / 排班 / 物品 / 公约</b></span>
+      <span class="chip">冷启动关键：<b>一人建房屋，其余只扫码</b></span>
+    </div>
+    <a class="hero-cta" href="index.html">▶ 打开可交互 Demo <span>（可直接操作，无需安装）</span></a>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="toc">
+    <p class="toc-h">目录</p>
+    <ol>
+      <li><a href="#s1">01 产品定位与用户场景</a></li>
+      <li><a href="#s2">02 功能结构</a></li>
+      <li><a href="#s3">03 核心功能详述</a></li>
+      <li><a href="#s4">04 关键页面与交互</a></li>
+      <li><a href="#s5">05 差异化设计</a></li>
+      <li><a href="#s6">06 落地路线与指标</a></li>
+      <li><a href="#s7">07 取舍与风险</a></li>
+    </ol>
+  </aside>
+
+  <main>
+
+  <!-- ================= 01 ================= -->
+  <section id="s1">
+    <div class="sec-num">01</div>
+    <h2>产品定位与用户场景</h2>
+    <p class="sec-sub">先说清楚：为什么合租矛盾不是「钱的问题」，而是「没有共同事实的问题」。</p>
+
+    <h3>1.1 一句话定位</h3>
+    <div class="panel">
+      <p style="margin:0"><strong>合租生活管家</strong> 是一个「房屋单元」级的协作账本：以一个出租屋为单位，把 <strong>费用分摊</strong>、<strong>清洁值日</strong>、<strong>公共物品消耗</strong> 三件日常事务统一登记、自动计算、共同确认，并把室友之间口头约定的 <strong>公约</strong> 变成系统里可执行的配置项。它服务的是关系脆弱、怕正面冲突、且不愿意为几十块钱翻脸的年轻合租人群。</p>
+    </div>
+
+    <div class="note">
+      <b>定位边界（刻意不做什么）：</b>不做房东端收租系统（那是 B 端生意，会把产品拖向水电表硬件）；不做沉浸式社交社区（室友关系需要的是「少说话」，不是「多互动」）；不做精确到分的消费记账（用户要的是「我不吃亏」，不是「财务分析」）。
+    </div>
+
+    <h3>1.2 核心用户画像</h3>
+    <div class="grid g3">
+      <div class="persona">
+        <div class="avatar">林</div>
+        <h4>小林 · 主画像</h4>
+        <p class="role">24 岁 · 一线城市互联网初级岗 · 三居室合租</p>
+        <dl>
+          <dt>居住状态</dt>
+          <dd>月租分摊 2,200 元，与 1 名同事 + 1 名网友合租，住次卧</dd>
+          <dt>关系强度</dt>
+          <dd>弱熟人：不是家人，也不好意思像朋友一样直说</dd>
+          <dt>行为特征</dt>
+          <dd>手机重度用户，晚上 22 点后回屋；愿意用工具，但不愿为了一件事装一个 APP、填一套注册</dd>
+          <dt>核心诉求</dt>
+          <dd>「我不怕花钱，我怕只有我在花钱」——需要被看见自己垫了多少</dd>
+          <dt>触发点</dt>
+          <dd>已经替室友垫过 2 次电费、3 次公共用品，一次都没主动要回来</dd>
+        </dl>
+      </div>
+      <div class="persona">
+        <div class="avatar a">周</div>
+        <h4>小周 · 次画像（隐形贡献者）</h4>
+        <p class="role">26 岁 · 行政岗 · 承担了大部分家务的人</p>
+        <dl>
+          <dt>行为特征</dt>
+          <dd>看不得厨房油腻，往往会「顺手做了」；做了也不说</dd>
+          <dt>情绪曲线</dt>
+          <dd>前 2 个月无所谓 → 第 3 个月开始不平衡 → 第 4 个月用沉默和「故意不倒垃圾」表达不满</dd>
+          <dt>核心诉求</dt>
+          <dd>「我可以多做，但别当成理所当然」——需要劳动被记录、被承认</dd>
+          <dt>流失风险</dt>
+          <dd>最高。这类人一旦决定搬走，房屋关系基本散架</dd>
+        </dl>
+      </div>
+      <div class="persona">
+        <div class="avatar b">陈</div>
+        <h4>小陈 · 次画像（被动型室友）</h4>
+        <p class="role">23 岁 · 应届生 · 第一次合租</p>
+        <dl>
+          <dt>行为特征</dt>
+          <dd>不主动、不拒绝、不记得；「我以为这周不是我」是口头禅</dd>
+          <dt>真实心态</dt>
+          <dd>并非故意逃避，而是缺少明确的通知和可见的排班表</dd>
+          <dt>核心诉求</dt>
+          <dd>「告诉我什么时候该做什么，我照做就行」——需要被温和、明确地提醒</dd>
+          <dt>设计含义</dt>
+          <dd>这类用户决定了产品的提醒机制必须做到「不点开也知道」</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3>1.3 痛点有据：不是猜的</h3>
+    <p>合租矛盾的分布已经被多项调研反复验证，且高度集中在「清洁」与「账单」这两类事务上：</p>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>来源</th><th>关键发现</th><th>对本产品的含义</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="y">Nationwide FlexStudent<br>（英国，2000+ 名合租者调研）</td>
+            <td>83% 的合租者与室友发生过争执；<strong>清洁问题占 60%</strong>、账单占 30%、未经允许使用他人物品占 29%；30% 认为自己承担了超出份额的费用，平均每年多付约 339 英镑</td>
+            <td>清洁是第一矛盾源，费用是第二。所以产品必须「排班」与「费用」并重，不能只做记账</td>
+          </tr>
+          <tr>
+            <td class="y">Barclays<br>（英国，2025 年 10 月，千禧一代与 Z 世代租客）</td>
+            <td>88% 因共享空间礼仪与室友起过冲突；<strong>86% 使用过被动攻击手段</strong>（沉默相对、贴便签、故意不倒垃圾、把东西摆到显眼处）；64% 因室友不付分摊费用而实际损失金钱</td>
+            <td>「不敢直说」是真实且普遍的行为模式。产品要消灭的不是懒惰，而是「说了怕伤感情」</td>
+          </tr>
+          <tr>
+            <td class="y">《2025 上海青年租房趋势报告》<br>（上海市青少年研究中心 × 自如租房）</td>
+            <td>2024 年沪上租房青年中合租占比 <strong>74.99%</strong>，整租 25.01%；合租平均月租金稳定在 2000–2500 元；北京、上海、广州、深圳租房人口近 4000 万</td>
+            <td>合租是年轻人的主流居住形态而非过渡特例，且人均月支出落在 2000–2500 元区间——分摊纠纷的绝对金额不大，正是「不值得翻脸但一直膈应」的典型区间</td>
+          </tr>
+          <tr>
+            <td class="y">《2025 年北京互联网从业青年「好房子」需求调研报告》<br>（中国青年报 × 保利发展北京）</td>
+            <td>超七成 00 后受访者在租房，其中合租占 30.08%；「温馨」「舒适」「治愈」成为描述理想居所的高频词，情绪价值正成为评判住房的重要标准</td>
+            <td>用户对居住体验的期待已从「有地方住」转向「住得舒服」。减少摩擦本身就是情绪价值，这是产品的价值主张依据</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <b>注意口径：</b>前两条为英国市场数据（该市场合租文化更成熟、调研更完整），在此仅用于说明<strong>矛盾类型的分布规律</strong>（清洁 &gt; 账单 &gt; 物品），不作为国内市场规模依据；国内规模与占比引用后两条。产品进入国内后需要本地化验证，尤其是「不直说」这一行为在国内合租中的具体表现强度。
+    </div>
+
+    <h3>1.4 痛点归因：矛盾来自「共同事实缺失」，而不是人品</h3>
+    <p>把调研结论和真实合租场景对齐后，六类高频痛点可以收敛成一句话：<strong>口头约定 + 无留痕 + 无提醒 + 不好意思提</strong>，四者叠加，使每一件小事都变成罗生门。</p>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>痛点</th><th>真实发生的样子</th><th>后果</th><th>产品对策</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>垫钱变成沉没成本</strong></td>
+            <td>小林先垫了 486 元电费，在群里发转账码，A 转了、B 说「明天转」然后就忘了</td>
+            <td>小林不好意思再提；两周后变成心结；下个月轮到电费没人愿意先付</td>
+            <td>账单留痕 + 净额结算 + 阶梯提醒（见 03 / 05）</td>
+          </tr>
+          <tr>
+            <td><strong>分摊标准每次重谈</strong></td>
+            <td>这次按人头分，下次有人说「我出差了 10 天」；主卧和次卧付一样的钱</td>
+            <td>每次交费都要重新吵一次「怎么算」</td>
+            <td>分摊方式写入公约，成为房屋默认参数，录入时自动带出</td>
+          </tr>
+          <tr>
+            <td><strong>排班是口头的</strong></td>
+            <td>「上周是我，这周该你了吧？」——双方记忆不一致，最后靠吵架定论</td>
+            <td>总有人多做；多做的人从心理不平衡走向被动攻击</td>
+            <td>系统生成排班表 + 打卡留痕 + 换班需双方确认</td>
+          </tr>
+          <tr>
+            <td><strong>消耗品黑洞</strong></td>
+            <td>纸巾、洗洁精、垃圾袋永远有人用、没人买；等发现没了，已经是最后一个用的人的责任</td>
+            <td>每次都靠「谁先受不了谁去买」，成本向性格最负责的人倾斜</td>
+            <td>低摩擦消耗登记 + 安全库存提醒 + 采购自动生成账单</td>
+          </tr>
+          <tr>
+            <td><strong>公约只是群公告</strong></td>
+            <td>入住时说得明明白白，三天后被聊天记录刷走，新人根本没读过</td>
+            <td>「我们不是说好了吗」失去事实依据</td>
+            <td>公约版本化 + 逐条签署 + 关键条款绑定为系统规则</td>
+          </tr>
+          <tr>
+            <td><strong>社交成本高于金钱成本</strong></td>
+            <td>为了 47.5 元去催室友，衡量之后多数人选择「算了」</td>
+            <td>表面平静，暗地累积；86% 的人最终用被动攻击表达不满</td>
+            <td>匿名聚合提醒、一键代垫、贡献分抵扣小额零头（见 05）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.5 典型使用场景</h3>
+    <div class="panel">
+      <div class="scn">
+        <div class="scn-n">S1</div>
+        <div class="scn-b">
+          <h4>月度电费账单到了（最高频，每月 1–2 次）</h4>
+          <p>物业在群里发了 286.4 元的电费截图。小林点「新建账单 → 电费模板」，填总额或直接录抄表读数，系统自动按公约里的「按人头均摊」算出每人 95.47 元并实时预览。提交后三人收到通知，各自点「确认」，账单进入「待支付」。小林收到两笔转账后点「标记已收到」，账单结清。</p>
+          <span class="win">全程无需在群里发一条消息</span>
+        </div>
+      </div>
+      <div class="scn">
+        <div class="scn-n">S2</div>
+        <div class="scn-b">
+          <h4>周日晚 22:00，「这周谁扫地」的沉默（每周）</h4>
+          <p>没人回答。但系统在周日 20:00 已经给本周值日人推了任务卡，卡里列明「卫生间：地漏滤网 + 台面水渍 + 马桶」。小周做完拍照打卡，任务变绿，贡献分 +10。想换班时，点「申请换班」选择室友，对方同意后系统自动同步双方排班，避免「我记得是你」。</p>
+          <span class="win">把口头指派变成可查的任务记录</span>
+        </div>
+      </div>
+      <div class="scn">
+        <div class="scn-n">S3</div>
+        <div class="scn-b">
+          <h4>最后一包纸巾被用完了（随时发生）</h4>
+          <p>任何人用完最后一包，在物品页点一下纸巾的「快没了」（两步操作，约 2 秒）。系统判定低于安全库存，通知本月采购负责人。对方点「我去买」认领，买回上传小票 29.9 元，自动生成一张按人头分摊的一次性账单，库存同时回补为 4 包。</p>
+          <span class="win">「谁买」不再依赖谁先不好意思</span>
+        </div>
+      </div>
+      <div class="scn">
+        <div class="scn-n">S4</div>
+        <div class="scn-b">
+          <h4>新室友搬进来（每 6–12 个月一次，风险最高）</h4>
+          <p>老成员生成邀请码，新人扫码、填昵称与房间，逐条阅读并确认当前生效的公约版本，随后自动加入值日轮值序列、按剩余居住天数折算本月房租水电、获得物品台账权限。上一任室友的历史记录完整留档，不会因为换人而丢失。</p>
+          <span class="win">人员更替不再意味着账本归零</span>
+        </div>
+      </div>
+      <div class="scn">
+        <div class="scn-n">S5</div>
+        <div class="scn-b">
+          <h4>有人要搬走（最容易烂尾的时刻）</h4>
+          <p>点「我要搬走」→ 选择搬出日期 → 系统生成离场结算单：应分摊未付、垫付未收、未完成值日折算、押金建议返还额，一并列出并请其余成员确认。所有记录归档进房屋历史，剩余成员继续使用同一套账本。</p>
+          <span class="win">让「散伙」也是一次清晰的结算，而不是一次翻脸</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>1.6 设计原则（贯穿全部模块）</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="panel-h"><span class="dot"></span>原则一：记录成本必须接近零</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">任何需要超过 3 步、超过 15 秒的登记动作，用户两周内就会放弃。所有高频操作（用完东西、完成值日、确认账单）都必须能一步完成。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot a"></span>原则二：对事不对人</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">系统只陈述事实（「本周有 1 笔待确认账单」），不点名指责、不公开排名、不使用「你还没交钱」这类句式。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot b"></span>原则三：默认值来自公约</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">分摊比例、清洁标准、提醒时间、安全库存，全部取自公约中已生效的条款。用户不需要每次做决定，只需要在入住时决定一次。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot r"></span>原则四：双向确认，拒绝单方面结论</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">「我转账了」和「我收到了」是两条独立记录；账单修改必须留新版本；换班必须对方同意。任何一方单独操作都不生效。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section id="s2">
+    <div class="sec-num">02</div>
+    <h2>功能结构</h2>
+    <p class="sec-sub">六个模块：一个数据底座（M0）、四大业务模块（M1–M4）、一个协同引擎（M5）。</p>
+
+    <h3>2.1 模块清单</h3>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>编号</th><th>模块</th><th>定位</th><th>关键能力</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>M0</strong></td>
+            <td><strong>房屋与成员</strong></td>
+            <td>全局数据底座，其余模块的前置依赖</td>
+            <td>创建/加入房屋、成员与房间管理、分摊权重、角色权限、邀请与移除、离场结算</td>
+            <td><span class="tag t-r">MVP</span></td>
+          </tr>
+          <tr>
+            <td><strong>M1</strong></td>
+            <td><strong>费用 AA 分摊</strong></td>
+            <td>把「谁欠谁多少」算清楚并闭环</td>
+            <td>账单录入、四种分摊模型、抄表、分摊明细预览、多人确认、净额结算、提醒阶梯、凭证与导出</td>
+            <td><span class="tag t-r">MVP</span></td>
+          </tr>
+          <tr>
+            <td><strong>M2</strong></td>
+            <td><strong>清洁值日排班</strong></td>
+            <td>把「谁该干活」变成可见的任务</td>
+            <td>区域与标准清单、轮值/固定/抢单三种排班、任务打卡、换班协商、验收与申诉、逾期处理</td>
+            <td><span class="tag t-r">MVP</span></td>
+          </tr>
+          <tr>
+            <td><strong>M3</strong></td>
+            <td><strong>公共物品登记与消耗提醒</strong></td>
+            <td>堵住消耗品的责任真空</td>
+            <td>物品台账、低摩擦消耗登记、安全库存与消耗速度预测、采购认领、小票转账单、共享设备借用登记</td>
+            <td><span class="tag t-o">二期</span></td>
+          </tr>
+          <tr>
+            <td><strong>M4</strong></td>
+            <td><strong>室友公约管理</strong></td>
+            <td>把口头约定变成可执行配置</td>
+            <td>公约模板库、条款绑定系统规则、逐条签署、版本管理、提案投票、冲突协商通道</td>
+            <td><span class="tag t-o">二期</span></td>
+          </tr>
+          <tr>
+            <td><strong>M5</strong></td>
+            <td><strong>协同与激励引擎</strong></td>
+            <td>跨模块的公共能力层（差异化载体）</td>
+            <td>贡献分与「力账」、净额结算引擎、三段式提醒阶梯、通知中心、房屋周报</td>
+            <td><span class="tag t-b">差异化</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.2 架构关系图</h3>
+    <div class="panel">
+      <svg viewBox="0 0 920 600" width="100%" role="img" aria-label="合租生活管家功能架构与模块关系图" style="display:block">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="#C9761F"/>
+          </marker>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="#1E7A63"/>
+          </marker>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="#2B6CB0"/>
+          </marker>
+          <style>
+            .bx{fill:#FFFFFF;stroke:#E2E8E4;stroke-width:1.2}
+            .bxm{fill:#FFFFFF;stroke:#C9E2DA;stroke-width:1.4}
+            .ttl{font:700 15px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;fill:#14211D}
+            .sub{font:400 11px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;fill:#77887F}
+            .kwd{font:500 11.5px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;fill:#3E5049}
+            .lbl{font:600 10.5px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;fill:#77887F}
+            .id{font:800 12px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;fill:#FFFFFF}
+          </style>
+        </defs>
+
+        <!-- M5 -->
+        <rect class="bx" x="60" y="26" width="800" height="62" rx="13" fill="#E6F3EF" stroke="#C9E2DA"/>
+        <rect x="76" y="43" width="30" height="28" rx="8" fill="#1E7A63"/>
+        <text class="id" x="84" y="62">M5</text>
+        <text class="ttl" x="118" y="55">协同与激励引擎</text>
+        <text class="sub" x="118" y="74">贡献分 / 净额结算 / 三段式提醒 / 通知中心 / 房屋周报</text>
+        <text class="lbl" x="792" y="60" text-anchor="end">跨模块公共层</text>
+
+        <!-- connectors M5 <- modules -->
+        <path d="M160,212 L160,116" stroke="#1E7A63" stroke-width="1.3" fill="none" marker-end="url(#ar2)"/>
+        <path d="M380,212 L380,116" stroke="#1E7A63" stroke-width="1.3" fill="none" marker-end="url(#ar2)"/>
+        <path d="M600,212 L600,116" stroke="#1E7A63" stroke-width="1.3" fill="none" marker-end="url(#ar2)"/>
+        <path d="M790,212 L790,116" stroke="#1E7A63" stroke-width="1.3" fill="none" marker-end="url(#ar2)"/>
+        <text class="lbl" x="470" y="140" text-anchor="middle" fill="#1E7A63">↑ 支出与履约数据上报 → 计分 / 提醒 / 结算</text>
+
+        <!-- four modules -->
+        <g>
+          <rect class="bxm" x="70" y="212" width="180" height="150" rx="13"/>
+          <rect x="86" y="228" width="28" height="22" rx="7" fill="#1E7A63"/>
+          <text class="id" x="92" y="243">M1</text>
+          <text class="ttl" x="122" y="243" style="font-size:14px">费用 AA 分摊</text>
+          <text class="kwd" x="86" y="274">· 账单录入 / 抄表</text>
+          <text class="kwd" x="86" y="296">· 均摊 / 权重 / 用量 / 自定义</text>
+          <text class="kwd" x="86" y="318">· 分摊预览 → 多人确认</text>
+          <text class="kwd" x="86" y="340">· 净额结算与提醒阶梯</text>
+        </g>
+        <g>
+          <rect class="bxm" x="290" y="212" width="180" height="150" rx="13"/>
+          <rect x="306" y="228" width="28" height="22" rx="7" fill="#1E7A63"/>
+          <text class="id" x="312" y="243">M2</text>
+          <text class="ttl" x="342" y="243" style="font-size:14px">清洁值日排班</text>
+          <text class="kwd" x="306" y="274">· 区域 + 标准清单</text>
+          <text class="kwd" x="306" y="296">· 轮值 / 固定 / 抢单</text>
+          <text class="kwd" x="306" y="318">· 任务打卡与验收</text>
+          <text class="kwd" x="306" y="340">· 换班协商与逾期处理</text>
+        </g>
+        <g>
+          <rect class="bxm" x="510" y="212" width="180" height="150" rx="13"/>
+          <rect x="526" y="228" width="28" height="22" rx="7" fill="#C9761F"/>
+          <text class="id" x="532" y="243">M3</text>
+          <text class="ttl" x="562" y="243" style="font-size:14px">公共物品登记</text>
+          <text class="kwd" x="526" y="274">· 台账 / 剩余量 / 安全库存</text>
+          <text class="kwd" x="526" y="296">· 一键消耗 / 快没了</text>
+          <text class="kwd" x="526" y="318">· 补货认领 → 小票转账单</text>
+          <text class="kwd" x="526" y="340">· 共享设备借用与归还</text>
+        </g>
+        <g>
+          <rect class="bxm" x="700" y="212" width="180" height="150" rx="13"/>
+          <rect x="716" y="228" width="28" height="22" rx="7" fill="#C9761F"/>
+          <text class="id" x="722" y="243">M4</text>
+          <text class="ttl" x="752" y="243" style="font-size:14px">室友公约管理</text>
+          <text class="kwd" x="716" y="274">· 模板库 / 逐条签署</text>
+          <text class="kwd" x="716" y="296">· 条款绑定系统规则</text>
+          <text class="kwd" x="716" y="318">· 版本管理与变更留痕</text>
+          <text class="kwd" x="716" y="340">· 提案投票 / 协商通道</text>
+        </g>
+
+        <!-- M2 -> M3 -->
+        <path d="M470,262 L508,262" stroke="#C9761F" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+        <text class="lbl" x="489" y="253" text-anchor="middle" fill="#C9761F">消耗登记</text>
+
+        <!-- M3 -> M1 bottom折线 -->
+        <path d="M600,362 L600,410 L160,410 L160,366" stroke="#2B6CB0" stroke-width="1.6" fill="none" marker-end="url(#ar3)"/>
+        <text class="lbl" x="380" y="403" text-anchor="middle" fill="#2B6CB0">采购完成 → 自动生成一次性账单（按物品归属分摊）</text>
+
+        <!-- M4 -> bus -->
+        <path d="M790,362 L790,448 L160,448" stroke="#C9761F" stroke-width="1.6" stroke-dasharray="5 4" fill="none"/>
+        <path d="M160,448 L160,366" stroke="#C9761F" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+        <path d="M380,448 L380,366" stroke="#C9761F" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+        <path d="M600,448 L600,366" stroke="#C9761F" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+        <text class="lbl" x="470" y="441" text-anchor="middle" fill="#C9761F">公约规则下发：分摊方式 / 清洁标准 / 库存阈值 / 提醒时间</text>
+
+        <!-- M0 -->
+        <rect class="bx" x="60" y="500" width="800" height="62" rx="13" fill="#FAFCFB"/>
+        <rect x="76" y="517" width="30" height="28" rx="8" fill="#3E5049"/>
+        <text class="id" x="84" y="536">M0</text>
+        <text class="ttl" x="118" y="529">房屋与成员（数据底座）</text>
+        <text class="sub" x="118" y="548">房屋 / 成员 / 房间 / 分摊权重 / 角色权限 / 加入与离场</text>
+        <path d="M160,500 L160,470" stroke="#84968F" stroke-width="1.2" stroke-dasharray="4 4" fill="none"/>
+        <path d="M380,500 L380,456" stroke="#84968F" stroke-width="1.2" stroke-dasharray="4 4" fill="none"/>
+        <path d="M600,500 L600,456" stroke="#84968F" stroke-width="1.2" stroke-dasharray="4 4" fill="none"/>
+        <path d="M790,500 L790,470" stroke="#84968F" stroke-width="1.2" stroke-dasharray="4 4" fill="none"/>
+        <text class="lbl" x="470" y="492" text-anchor="middle">所有模块的数据容器与权限来源</text>
+      </svg>
+    </div>
+
+    <h3>2.3 模块之间的关系（六条主链路）</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="panel-h"><span class="dot"></span>① M0 → 全部模块：容器与权限</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">没有房屋与成员，任何模块都无法初始化。成员的分摊权重、房间归属、加入/离开日期是 M1 计算与 M2 排班的共同输入。这条是硬依赖。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot a"></span>② M4 → M1 / M2 / M3：规则下发</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">公约是唯一允许「一次决定、长期生效」的地方。公约中的分摊方式直接成为 M1 的录入默认值；清洁标准与频次直接生成 M2 的任务模板；安全库存与提醒时间直接成为 M3 的阈值。这是四模块之间最强的一条链路。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot b"></span>③ M3 → M1：采购转账单</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">公共物品补货完成后，上传的小票金额自动生成一张一次性账单，并按物品归属范围（全体 / 部分成员）确定分摊人。用户无需在两个模块里各录一次。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot a"></span>④ M2 → M3：履约消耗</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">完成清洁任务时，若使用了公共清洁用品（消毒液、洁厕灵），可在打卡时顺手勾选消耗。这是 M3 消耗数据的第二大来源，也解释了为什么 M2 与 M3 常被一起使用。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot b"></span>⑤ M1 + M2 + M3 → M5：数据汇聚</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">三个业务模块产生「支出记录」与「履约记录」，汇入 M5 的贡献分与净额结算引擎。M5 不产生新的业务数据，只做聚合、计算与提醒。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot r"></span>⑥ M5 → M1 / M2：提醒与抵扣回流</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">M5 计算出的提醒时机、扣分风险、贡献分可抵扣额，会在账单与任务界面回显。这条链路保证「激励」不是孤立的一个页面，而是嵌进日常操作里。</p>
+      </div>
+    </div>
+
+    <h3>2.4 三条贯穿主线</h3>
+    <p>理解这个产品结构最省力的方式，是记住它同时维护三本账，四模块各自服务于其中一本或几本：</p>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>账本</th><th>回答的问题</th><th>主要模块</th><th>计量单位</th><th>失衡的表现</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>钱账</strong></td><td>谁欠谁多少</td><td>M1（主）· M3（贡献账单）</td><td>元</td><td>「总是我在垫钱」</td></tr>
+          <tr><td><strong>力账</strong></td><td>谁做了多少</td><td>M2（主）· M5 计分（承载）</td><td>任务次数 / 贡献分</td><td>「凭什么总是我」</td></tr>
+          <tr><td><strong>物账</strong></td><td>东西在哪、还剩多少</td><td>M3（主）· M2（关联消耗）</td><td>件 / 剩余量</td><td>「谁用完了也不说」</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><b>为什么强调三本账：</b>市面上多数合租类工具只做「钱账」。但调研显示清洁（60%）高于账单（30%）——只解决钱的问题，产品会在第三个月失去最有价值的那类用户（小周）。<strong>力账</strong>是本产品与同类产品的分水岭。</div>
+
+    <h3>2.5 角色与权限</h3>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>角色</th><th>说明</th><th>可做</th><th>不可做</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>房屋创建者</strong></td><td>通常是第一个建房间的人，非管理员，只是初始化者</td><td>邀请成员、维护房屋基础信息、发起公约草案</td><td>不能单独修改他人账单、不能单独移除成员（需其他成员同意）</td></tr>
+          <tr><td><strong>普通成员</strong></td><td>默认角色，人人平等</td><td>录入账单、发起换班、登记消耗、提案投票、对账单提出异议</td><td>不能修改他人已确认的账单、不能删除历史记录</td></tr>
+          <tr><td><strong>轮值负责人</strong></td><td>按周期轮换的岗位（采购负责人 / 协调人），不是特权身份</td><td>在负责领域内主动发起（如采购认领）</td><td>没有额外裁决权，逾期后职责自动转移</td></tr>
+          <tr><td><strong>即将离场成员</strong></td><td>已发起离场流程但未完成结算</td><td>查看全部记录、参与确认结算单</td><td>不能新增账单或认领新任务（防止临走前产生新纠纷）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section id="s3">
+    <div class="sec-num">03</div>
+    <h2>核心功能详述</h2>
+    <p class="sec-sub">逐模块拆解：功能要点 → 关键业务流程 → 主要数据字段 → 边界规则。四个模块共用同一套「记录 → 计算 → 确认 → 提醒」骨架。</p>
+
+    <!-- ---------- M1 ---------- -->
+    <div class="mod">
+      <div class="mod-h">
+        <div class="mod-id">M1</div>
+        <div>
+          <h3>费用 AA 分摊</h3>
+          <p class="mod-sub">把「谁欠谁多少」算清楚，并确保每一笔都有确认、有留痕、能被温和地追回</p>
+        </div>
+      </div>
+      <div class="mod-b">
+
+        <h4>功能要点</h4>
+        <div class="grid g2">
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>A. 账单录入</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>常驻账单模板</strong>：房租、物业费、宽带、水费、电费、燃气费。可按周期（每月 / 每两月）自动生成一条「待确认」账单，用户只需补金额</li>
+              <li><strong>一次性账单</strong>：公共采购、家电维修、上门服务、临时罚金</li>
+              <li><strong>两种金额输入</strong>：直接填总额；或走「抄表模式」＝（本期读数 − 上期读数）× 单价，支持阶梯电价分段</li>
+              <li><strong>垫付人必填</strong>：记录「这笔钱是谁先掏的」，这是净额结算的唯一依据</li>
+              <li><strong>凭证上传</strong>：账单截图 / 小票照片，作为分摊依据而非事后扯皮的素材</li>
+              <li><strong>实时预览</strong>：填写过程中即显示「每人应付」，把分歧前置到录入环节而不是支付环节</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>B. 四种分摊模型</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>均摊</strong>：总额 ÷ 人数，最常用，默认值</li>
+              <li><strong>按房间权重</strong>：主卧 1.2 / 次卧 1.0 / 小卧 0.8，权重由公约设定并随时可调，解决「大房间和小房间付一样的钱」</li>
+              <li><strong>按实际用量</strong>：水电燃气按分表读数分摊；公区用量（客厅、公卫）先剥离，再按人头或权重二次分摊</li>
+              <li><strong>按天折算 / 自定义比例</strong>：适用于「我本月只住了 12 天」或成员中途加入、提前搬走</li>
+            </ul>
+            <div class="note" style="margin:12px 0 0;font-size:13px"><b>尾差规则：</b>各份额四舍五入到「分」，产生的 ±0.0X 元差额统一计入垫付人，<strong>保证分项之和严格等于账单总额</strong>。低于 1 元的份额自动归零并计入垫付人，避免出现「你欠我 1 分钱」这种荒诞记录。</div>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>C. 确认与争议</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>草稿</strong>：仅创建者可见，可随意修改</li>
+              <li><strong>待确认</strong>：全员收到通知，各自可「确认」或「有异议」</li>
+              <li><strong>确认规则</strong>：由公约设定——全员确认，或 72 小时内无人提出异议即视为默认通过</li>
+              <li><strong>异议必填理由</strong>：可附照片；账单进入「协商中」，创建者修订后生成 <code>v2</code> 重新推送，旧版本完整保留</li>
+              <li><strong>已确认账单不可直接编辑</strong>：只能提交修订，杜绝历史被悄悄改写</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>D. 结算与提醒</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>净额结算</strong>：把逐笔债务压缩成最少转账笔数（n 个人最多 n−1 笔），减少「你转我、我再转他」</li>
+              <li><strong>双向确认</strong>：付款方点「我已转账」＋收款方点「已收到」，两个动作齐备才记为结清</li>
+              <li><strong>提醒阶梯</strong>：D0 生成通知 → D+2 提醒未确认者本人 → D+5 提醒未支付者本人 → D+7 通知全体（表述为「本房屋有 2 笔未结清」，不点名）</li>
+              <li><strong>月度结算单</strong>：一键导出「谁欠谁 + 已结清状态」快照，可作为合租分手的书面依据</li>
+              <li><strong>离场结算</strong>：成员发起搬离时自动生成个人结算单</li>
+            </ul>
+          </div>
+        </div>
+
+        <h4>关键业务流程</h4>
+        <div class="flow">
+          <div class="step">
+            <div class="k">STEP 1</div>
+            <h5>费用录入</h5>
+            <p>选模板（如电费）→ 填总额或录抄表读数 → 指定垫付人 → 分摊方式自动带出公约默认值 → 上传凭证。</p>
+          </div>
+          <div class="step">
+            <div class="k">STEP 2</div>
+            <h5>分摊计算</h5>
+            <p>按所选模型计算各人份额并实时预览；自动处理尾差与不足 1 元的份额；结果可保存为模板复用。</p>
+          </div>
+          <div class="step">
+            <div class="k">STEP 3</div>
+            <h5>账单确认</h5>
+            <p>推送全员 → 各自确认或有异议 → 达阈值转为「待支付」→ 有异议则进入协商并生成新版本。</p>
+          </div>
+          <div class="step">
+            <div class="k">STEP 4</div>
+            <h5>结算提醒</h5>
+            <p>净额结算给出最少转账方案 → 付款与收款双向确认 → 阶梯提醒兜底 → 结清后归档进月度结算单。</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><span class="dot b"></span>交互演示：分摊计算与尾差处理</div>
+          <p style="font-size:13.5px;color:var(--ink-3);margin:-4px 0 14px">改一改金额和数字，看系统怎么算。注意合计永远等于总额——这是消除「钱对不上」争吵的关键。</p>
+          <div class="calc">
+            <div>
+              <div class="field">
+                <label>账单总额（元）</label>
+                <input id="cAmt" type="number" value="286.40" step="0.01" min="0">
+              </div>
+              <div class="field">
+                <label>分摊方式</label>
+                <select id="cMode">
+                  <option value="even">均摊（按人头）</option>
+                  <option value="weight">按房间权重</option>
+                  <option value="days">按实际居住天数</option>
+                </select>
+              </div>
+              <div id="cMembers"></div>
+            </div>
+            <div class="res" id="cRes"></div>
+          </div>
+        </div>
+
+        <h4>主要数据字段</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>实体</th><th>字段</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr>
+                <td rowspan="4"><strong>Bill</strong><br><span class="tag t-n">账单</span></td>
+                <td><code>id</code> / <code>house_id</code></td>
+                <td>账单唯一标识 / 所属房屋</td>
+              </tr>
+              <tr><td><code>title</code> / <code>category</code></td><td>标题 / 类别（房租·水电·燃气·网费·日用品·维修·其他）</td></tr>
+              <tr><td><code>total_amount</code> / <code>payer_id</code> / <code>split_rule</code></td><td>总额 / 垫付人 / 分摊方式（even·weight·usage·custom）</td></tr>
+              <tr><td><code>period</code> / <code>due_date</code> / <code>status</code> / <code>version</code> / <code>evidence_urls</code></td><td>账期（2026-09）/ 应付截止日 / 状态 / 版本号 / 凭证</td></tr>
+              <tr>
+                <td rowspan="2"><strong>BillShare</strong><br><span class="tag t-n">分摊明细</span></td>
+                <td><code>id</code> / <code>bill_id</code> / <code>member_id</code></td>
+                <td>明细标识 / 所属账单 / 成员</td>
+              </tr>
+              <tr><td><code>weight</code> / <code>amount</code> / <code>paid_status</code> / <code>confirm_status</code> / <code>dispute_reason</code></td><td>权重或天数 / 应付金额 / 支付状态 / 确认状态 / 异议理由</td></tr>
+              <tr>
+                <td rowspan="2"><strong>Settlement</strong><br><span class="tag t-n">结算</span></td>
+                <td><code>id</code> / <code>house_id</code> / <code>from_member</code> / <code>to_member</code></td>
+                <td>结算标识 / 房屋 / 付款方 / 收款方</td>
+              </tr>
+              <tr><td><code>amount</code> / <code>status</code> / <code>marked_paid_at</code> / <code>confirmed_at</code></td><td>金额 / 状态 / 付款方标记时间 / 收款方确认时间</td></tr>
+              <tr>
+                <td><strong>Member</strong><br><span class="tag t-n">成员（M0）</span></td>
+                <td><code>id</code> / <code>room</code> / <code>weight</code> / <code>join_date</code> / <code>leave_date</code> / <code>balance</code></td>
+                <td>成员 / 房间 / 分摊权重 / 加入日期 / 离开日期 / 当前净额（正为应收，负为应付）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4>边界规则</h4>
+        <ul style="font-size:14px;color:var(--ink-2)">
+          <li><strong>中途加入 / 退出</strong>：当月费用按「居住天数 ÷ 当月总天数」折算，折算比例在录入界面直接显示，避免事后争议</li>
+          <li><strong>大额账单保护</strong>：单笔超过该房屋近三个月月均支出 3 倍时，需至少 2 人确认方可生效，防止误录或刷单</li>
+          <li><strong>房租类账单特殊处理</strong>：不允许因异议而删除，只能修订——防止有人以「我不认」来拖延</li>
+          <li><strong>离场人员未清账</strong>：结算单自动标红并提示从押金中抵扣，由房屋创建者与另一名成员共同确认后归档</li>
+        </ul>
+
+      </div>
+    </div>
+
+    <!-- ---------- M2 ---------- -->
+    <div class="mod">
+      <div class="mod-h">
+        <div class="mod-id">M2</div>
+        <div>
+          <h3>清洁值日排班</h3>
+          <p class="mod-sub">把「谁该干活」从口头约定变成一张所有人看得见、可查证、可协商的任务表</p>
+        </div>
+      </div>
+      <div class="mod-b">
+
+        <h4>功能要点</h4>
+        <div class="grid g2">
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>A. 区域与标准</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>可自定义区域</strong>，默认五个：厨房、卫生间、客厅与地面、垃圾清运、阳台与冰箱</li>
+              <li><strong>每个区域带检查清单</strong>：厨房＝灶台油污 + 水槽滤网 + 台面 + 垃圾桶。清单的作用是让「打扫」变成<strong>可验收</strong>的动作</li>
+              <li><strong>频次分开设置</strong>：垃圾清运每日、卫生间与厨房每周、冰箱与阳台每两周</li>
+              <li>同一成员当天有多个任务时自动合并成一张「今日任务卡」，减少通知条数</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>B. 三种排班模式</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>轮流（默认）</strong>：按成员顺序自动轮换，本周外出超过 3 天的成员自动跳过并顺延</li>
+              <li><strong>固定认领</strong>：某项任务某人长期负责（「我每天早出门，顺手带垃圾」），避免反复协调</li>
+              <li><strong>开放抢单 + 兜底</strong>：开放 48 小时自由认领，逾期无人认领则自动指派给当月贡献分最低者——温和地让「从不主动」的人承担一次</li>
+              <li>排班周期可选「按周」或「按月」，默认按周（反馈更快、记忆负担更小）</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>C. 执行、打卡与验收</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li>任务卡出现在「我的任务」，含检查清单与预计耗时</li>
+              <li><strong>打卡必须带照片</strong>——这是本产品里唯一的硬性证据要求，因为「我做了」与「没做」是合租最典型的罗生门</li>
+              <li><strong>互验（可选开启）</strong>：由其他成员点「确认完成」后任务才闭环；不开启则打卡即完成</li>
+              <li><strong>不达标申诉</strong>：任何成员可对已打卡任务提出「不达标」并附照片，任务回到待办且通知本人；申诉同样需要举证，防止被滥用成攻击手段</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>D. 换班、请假与逾期</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>换班需对方同意</strong>：发起 → 选目标成员并填原因 → 对方同意 → 系统同步双方排班并留下变更记录。这一步专治「我记得是你」</li>
+              <li><strong>请假豁免</strong>：连续外出 ≥ 3 天可申请豁免，豁免疫务由其余成员分摊或整体顺延，由本人选择</li>
+              <li><strong>逾期处理</strong>：当日 22:00 未打卡提醒本人；逾期 24 小时自动顺延给下一顺位并记录一次「未完成」</li>
+              <li><strong>安静时段</strong>：公约可设 23:00–08:00 免打扰，此时段通知只进 App 不弹横幅——避免「提醒」本身变成新的扰民源</li>
+            </ul>
+          </div>
+        </div>
+
+        <h4>关键业务流程</h4>
+        <div class="flow">
+          <div class="step">
+            <div class="k">STEP 1</div>
+            <h5>生成排班</h5>
+            <p>每周日 20:00 系统按规则生成下周任务，推送给对应成员并同步到房屋日历。</p>
+          </div>
+          <div class="step">
+            <div class="k">STEP 2</div>
+            <h5>到期提醒</h5>
+            <p>任务当日 09:00 与 20:00 各提醒一次本人；安静时段内不打扰。需要换班则在此时发起。</p>
+          </div>
+          <div class="step">
+            <div class="k">STEP 3</div>
+            <h5>执行打卡</h5>
+            <p>照检查清单逐项完成 → 拍照上传 → 可顺手勾选消耗的公共用品（写入 M3）。</p>
+          </div>
+          <div class="step">
+            <div class="k">STEP 4</div>
+            <h5>验收与计分</h5>
+            <p>互验通过或无人申诉即闭环 → 计入完成次数与贡献分 → 逾期未完成则顺延并记录。</p>
+          </div>
+        </div>
+
+        <h4>主要数据字段</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>实体</th><th>字段</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Area</strong><br><span class="tag t-n">区域</span></td><td><code>id</code> / <code>house_id</code> / <code>name</code> / <code>checklist[]</code> / <code>frequency</code> / <code>est_minutes</code></td><td>区域标识 / 房屋 / 名称 / 检查清单 / 频次（日·周·双周·月）/ 预计耗时</td></tr>
+              <tr><td rowspan="2"><strong>ShiftTask</strong><br><span class="tag t-n">值日任务</span></td><td><code>id</code> / <code>area_id</code> / <code>assignee_id</code> / <code>due_date</code> / <code>period</code></td><td>任务标识 / 区域 / 负责人 / 截止日 / 所属周期</td></tr>
+              <tr><td><code>status</code> / <code>proof_url</code> / <code>completed_at</code> / <code>verified_by</code> / <code>overdue_flag</code></td><td>状态（待办·已完成·已顺延·已豁免·已换班）/ 打卡照片 / 完成时间 / 验收人 / 是否逾期</td></tr>
+              <tr><td rowspan="2"><strong>SwapRequest</strong><br><span class="tag t-n">换班申请</span></td><td><code>id</code> / <code>task_id</code> / <code>from_member</code> / <code>to_member</code> / <code>reason</code></td><td>申请标识 / 任务 / 申请人 / 目标成员 / 原因</td></tr>
+              <tr><td><code>status</code> / <code>responded_at</code></td><td>状态（待响应·已同意·已拒绝·已过期）/ 响应时间</td></tr>
+              <tr><td><strong>ScoreLog</strong><br><span class="tag t-n">计分流水</span></td><td><code>id</code> / <code>member_id</code> / <code>source</code> / <code>delta</code> / <code>ref_id</code> / <code>created_at</code></td><td>流水标识 / 成员 / 来源（完成值日·采购·上报维修·连续达标）/ 分值变化 / 关联对象 / 时间</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- M3 ---------- -->
+    <div class="mod">
+      <div class="mod-h">
+        <div class="mod-id">M3</div>
+        <div>
+          <h3>公共物品登记与消耗提醒</h3>
+          <p class="mod-sub">堵住「永远有人用、没人买」的责任真空，且登记动作必须便宜到人人愿意做</p>
+        </div>
+      </div>
+      <div class="mod-b">
+
+        <h4>功能要点</h4>
+        <div class="grid g2">
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>A. 物品台账</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>消耗品</strong>：纸巾、洗洁精、垃圾袋、洗衣液、米面油</li>
+              <li><strong>共享设备</strong>：吸尘器、电钻、梯子、熨斗、工具箱</li>
+              <li><strong>共享库存</strong>：调料架、公共冰箱层、公共储物格</li>
+              <li><strong>归属范围</strong>：全体成员 / 部分成员（如两人共用的咖啡机），直接决定采购账单分给谁</li>
+              <li><strong>个人物品可登记位置</strong>：标记为「个人物品」不参与分摊，但记录存放位置——减少「我的东西被人用了」的猜疑</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>B. 消耗登记：三种成本递增的方式</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>① 「快没了」（约 2 秒）</strong>：任何人在任何时刻点一下，直接触发补货流程。这是最高频、也是唯一必须做顺的路径</li>
+              <li><strong>② 四档剩余量</strong>：1/4、1/2、3/4、空，适合愿意稍微精确一点的用户</li>
+              <li><strong>③ 「用了一次」计数</strong>：适合有明确计量的物品（垃圾袋、鸡蛋）</li>
+            </ul>
+            <div class="note" style="margin:12px 0 0;font-size:13px"><b>刻意不做的事：</b>不做强制登记，不因未登记而扣分。任何强制记录的设计在真实的合租环境里都会在两周内被集体放弃，进而拖垮整个模块。</div>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>C. 补货闭环</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>触发条件</strong>：剩余量 ≤ 安全库存，或按近 30 天平均消耗速度预测「剩余不足 3 天」</li>
+              <li><strong>通知本月采购负责人</strong>；24 小时内无人认领则在房屋内公开认领</li>
+              <li><strong>认领 → 采购 → 上传小票</strong>：小票金额自动生成一次性账单，按物品归属范围分摊（跨模块写入 M1）</li>
+              <li><strong>库存自动回补</strong>，并更新消耗速度基线</li>
+              <li><strong>无小票的情况</strong>：允许手填金额，但记录标注「无凭证」，其他成员可提出异议——兼顾便利与制衡</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>D. 共享设备借用 + 消耗趋势</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>借用登记</strong>：谁借的、预计何时归还；到期前 2 小时提醒，归还后确认。解决「吸尘器到底在谁屋里」这类高频的小型信息黑洞</li>
+              <li><strong>消耗趋势</strong>：本月 vs 上月公共采购支出、人均消耗，用于预算感知</li>
+              <li><strong>不做成员排名</strong>：只给房屋总量与趋势，不给个人消耗排行榜——避免把协作变成互相监视</li>
+            </ul>
+          </div>
+        </div>
+
+        <h4>关键业务流程</h4>
+        <div class="flow">
+          <div class="step"><div class="k">STEP 1</div><h5>登记消耗</h5><p>用完最后一包的人点「快没了」（或拖动剩余量）。系统判断是否低于安全库存。</p></div>
+          <div class="step"><div class="k">STEP 2</div><h5>触发提醒</h5><p>低于阈值即通知本月采购负责人；24 小时未响应则转为房屋内公开认领。</p></div>
+          <div class="step"><div class="k">STEP 3</div><h5>认领采购</h5><p>成员点「我去买」认领任务，形成一条待完成记录，避免两个人重复购买。</p></div>
+          <div class="step"><div class="k">STEP 4</div><h5>小票转账单</h5><p>上传小票 → 自动生成一次性账单并按归属分摊 → 库存回补 → 进入 M1 的确认流程。</p></div>
+        </div>
+
+        <h4>主要数据字段</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>实体</th><th>字段</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="3"><strong>Item</strong><br><span class="tag t-n">物品</span></td><td><code>id</code> / <code>house_id</code> / <code>name</code> / <code>category</code></td><td>物品标识 / 房屋 / 名称 / 类别（消耗品·共享设备·共享库存·个人物品）</td></tr>
+              <tr><td><code>scope</code> / <code>unit</code> / <code>location</code> / <code>purchaser_id</code></td><td>归属范围（全体·部分成员）/ 计量单位 / 存放位置 / 本月采购负责人</td></tr>
+              <tr><td><code>stock</code> / <code>safety_stock</code> / <code>avg_daily_usage</code> / <code>last_restocked_at</code></td><td>当前库存 / 安全库存 / 近 30 天日均消耗 / 上次补货时间</td></tr>
+              <tr><td rowspan="2"><strong>ConsumptionLog</strong><br><span class="tag t-n">消耗记录</span></td><td><code>id</code> / <code>item_id</code> / <code>member_id</code> / <code>delta</code></td><td>记录标识 / 物品 / 登记人 / 消耗量（可为「快没了」事件）</td></tr>
+              <tr><td><code>note</code> / <code>created_at</code></td><td>备注 / 登记时间（用于计算消耗速度）</td></tr>
+              <tr><td rowspan="2"><strong>RestockTask</strong><br><span class="tag t-n">补货任务</span></td><td><code>id</code> / <code>item_id</code> / <code>assignee_id</code> / <code>claimed_at</code></td><td>任务标识 / 物品 / 认领人 / 认领时间</td></tr>
+              <tr><td><code>amount</code> / <code>receipt_url</code> / <code>bill_id</code> / <code>status</code></td><td>金额 / 小票凭证 / 生成的账单（关联 M1）/ 状态</td></tr>
+              <tr><td><strong>BorrowRecord</strong><br><span class="tag t-n">借用记录</span></td><td><code>id</code> / <code>item_id</code> / <code>borrower_id</code> / <code>due_at</code> / <code>returned_at</code> / <code>status</code></td><td>记录标识 / 物品 / 借用人 / 预计归还 / 实际归还 / 状态</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- M4 ---------- -->
+    <div class="mod">
+      <div class="mod-h">
+        <div class="mod-id">M4</div>
+        <div>
+          <h3>室友公约管理</h3>
+          <p class="mod-sub">公约不是一份被聊天记录刷走的公告，而是系统的配置项与变更留痕</p>
+        </div>
+      </div>
+      <div class="mod-b">
+
+        <h4>功能要点</h4>
+        <div class="grid g2">
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>A. 公约模板库</div>
+            <p style="font-size:14px;color:var(--ink-2);margin:0 0 8px">按类别提供可直接采用的条款，每条都写成<strong>可判断真假</strong>的陈述句，避免「互相体谅」「保持整洁」这类无法执行的表述：</p>
+            <div class="pill-list">
+              <span class="hl">分摊规则</span><span class="hl">卫生标准</span><span class="hl">作息与噪音</span>
+              <span>访客与留宿</span><span>宠物</span><span>公共物品采购</span>
+              <span>吸烟与饮食</span><span>冲突处理</span><span>退出与押金</span>
+            </div>
+            <p style="font-size:13.5px;color:var(--ink-3);margin:0">示例条款：「23:00–08:00 公共区域保持安静」「访客留宿需提前 24 小时在群内告知」「公共消耗品维持 1 件安全库存」。</p>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot a"></span>B. 条款绑定系统规则（核心差异）</div>
+            <p style="font-size:14px;color:var(--ink-2);margin:0 0 10px">让公约从「一段文字」变成「一条配置」。绑定关系如下：</p>
+            <div class="tw" style="margin:0">
+              <table style="min-width:0;font-size:13px">
+                <thead><tr><th>公约条款</th><th>绑定到</th><th>系统自动行为</th></tr></thead>
+                <tbody>
+                  <tr><td>按人头均摊</td><td><span class="tag t-g">M1</span></td><td>录入账单时默认选中「均摊」</td></tr>
+                  <tr><td>垃圾每日 22:00 前清运</td><td><span class="tag t-g">M2</span></td><td>自动生成日频任务并设提醒时间</td></tr>
+                  <tr><td>消耗品保持 1 件安全库存</td><td><span class="tag t-o">M3</span></td><td>低于阈值即触发补货提醒</td></tr>
+                  <tr><td>安静时段 23:00–08:00</td><td><span class="tag t-b">M5</span></td><td>该时段仅站内通知，不弹横幅</td></tr>
+                  <tr><td>访客留宿提前 24h 告知</td><td><span class="tag t-b">M5</span></td><td>提供「报备」入口并留档</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="note" style="margin:12px 0 0;font-size:13px"><b>「不可执行」也要标出来：</b>物理层面的约定（如「马桶圈用完放下」）无法被系统约束，产品会明确标注为「仅靠自觉」。把哪些能管、哪些管不了讲清楚，本身就是一种诚实。</div>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>C. 签署与版本管理</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li>新成员加入时必须<strong>逐条确认</strong>当前生效版本，记录时间戳，杜绝「我不知道有这条规定」</li>
+              <li>修改公约需 <strong>≥ 2/3 成员同意</strong>，并保留版本历史（谁在何时改了哪一条、改前改后原文对比）</li>
+              <li>任何时刻只有<strong>一个生效版本</strong>，所有人打开看到的都一样，避免多份文档互相矛盾</li>
+              <li>变更会以「新条款将于 X 日生效」的形式通知全员，而不是立即生效造成既定事实</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>D. 提案投票与协商通道</div>
+            <ul style="margin:0;font-size:14px;color:var(--ink-2)">
+              <li><strong>提案</strong>：任何成员可发起（如「夏天空调统一 26℃」），设定截止时间与通过阈值（默认过半数，可设 2/3），到期自动生效或否决</li>
+              <li><strong>支持匿名投票</strong>：针对容易让人难堪的议题（如「某人太吵」），匿名是让真话被说出来的必要条件</li>
+              <li><strong>协商通道</strong>：提交问题（可匿名）→ 系统按轮值指派「本月协调人」→ 记录诉求、期望解决时间与双方陈述 → 形成结论</li>
+              <li><strong>结论可沉淀为公约补充条款</strong>，实现「吵过一次，就不用再吵第二次」</li>
+            </ul>
+          </div>
+        </div>
+
+        <h4>关键业务流程（新增成员 → 公约生效）</h4>
+        <div class="flow">
+          <div class="step"><div class="k">STEP 1</div><h5>发起邀请</h5><p>现有成员生成邀请码 / 二维码，新人扫码进入，无需完整注册流程。</p></div>
+          <div class="step"><div class="k">STEP 2</div><h5>逐条签署</h5><p>新人阅读当前生效版本的每一条条款并逐条确认，记录确认时间。</p></div>
+          <div class="step"><div class="k">STEP 3</div><h5>自动继承</h5><p>加入值日轮值序列、按剩余天数折算本月费用、获得物品台账权限。</p></div>
+          <div class="step"><div class="k">STEP 4</div><h5>规则生效</h5><p>绑定的分摊方式、清洁标准、提醒设置对本人立即生效，历史记录完整可见。</p></div>
+        </div>
+
+        <h4>主要数据字段</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>实体</th><th>字段</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="2"><strong>Pact</strong><br><span class="tag t-n">公约</span></td><td><code>id</code> / <code>house_id</code> / <code>version</code> / <code>effective_date</code></td><td>公约标识 / 房屋 / 版本号（如 v1.2）/ 生效日期</td></tr>
+              <tr><td><code>updated_by</code> / <code>changelog[]</code> / <code>status</code></td><td>最后修改人 / 变更记录（含改前改后原文）/ 状态（草案·生效中·已归档）</td></tr>
+              <tr><td rowspan="3"><strong>Clause</strong><br><span class="tag t-n">条款</span></td><td><code>id</code> / <code>pact_id</code> / <code>category</code> / <code>text</code></td><td>条款标识 / 所属公约 / 类别 / 条款原文</td></tr>
+              <tr><td><code>binding_target</code> / <code>binding_params</code></td><td>绑定对象（M1 分摊方式 / M2 任务模板 / M3 阈值 / M5 通知），及绑定参数</td></tr>
+              <tr><td><code>enforceable</code> / <code>agree_members[]</code> / <code>agreed_at</code></td><td>是否可系统执行 / 已确认成员 / 确认时间</td></tr>
+              <tr><td rowspan="2"><strong>Proposal</strong><br><span class="tag t-n">提案</span></td><td><code>id</code> / <code>house_id</code> / <code>proposer</code> / <code>content</code></td><td>提案标识 / 房屋 / 发起人 / 提案内容</td></tr>
+              <tr><td><code>deadline</code> / <code>threshold</code> / <code>votes[]</code> / <code>anonymous</code> / <code>result</code></td><td>截止时间 / 通过阈值 / 投票记录 / 是否匿名 / 结果</td></tr>
+              <tr><td><strong>Dispute</strong><br><span class="tag t-n">协商记录</span></td><td><code>id</code> / <code>house_id</code> / <code>submitter</code> / <code>mediator_id</code> / <code>statements[]</code> / <code>resolution</code> / <code>closed_at</code></td><td>记录标识 / 房屋 / 提交人（可匿名）/ 轮值协调人 / 双方陈述 / 结论 / 结案时间</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </section>
+  <!-- ================= 04 ================= -->
+  <section id="s4">
+    <div class="sec-num">04</div>
+    <h2>关键页面与交互</h2>
+    <p class="sec-sub">信息架构共 14 个页面。核心原则：用户打开产品后 5 秒内应该知道「今天我要做什么、有没有欠人的钱」。</p>
+
+    <h3>4.1 页面清单</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>#</th><th>页面</th><th>用途</th><th>核心元素</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>房屋驾驶舱（首页）</strong></td><td>一眼看清「我需要做什么 + 房屋有什么事没了」</td><td>待我处理清单（账单 / 值日 / 物品）、本月人均支出、房屋动态流</td></tr>
+          <tr><td>2</td><td>账单列表</td><td>按状态浏览全部账单</td><td>状态标签页（待确认·待支付·已结清·有争议）、金额、垫付人、分摊方式</td></tr>
+          <tr><td>3</td><td><strong>账单详情</strong></td><td>一笔账单的完整全貌与确认入口</td><td>总额、垫付人、分摊明细（每人金额 + 计算依据）、凭证、确认状态人头、确认 / 异议按钮</td></tr>
+          <tr><td>4</td><td>新建 / 编辑账单</td><td>录入并即时看到分摊结果</td><td>模板选择、抄表输入、垫付人、分摊方式（自动带出公约默认值）、实时预览、凭证上传</td></tr>
+          <tr><td>5</td><td><strong>结算中心</strong></td><td>回答「现在谁该给谁多少钱」</td><td>净额汇总、最少转账方案、一键复制收款信息、我已转账 / 已收到双向确认</td></tr>
+          <tr><td>6</td><td><strong>值日表</strong></td><td>可视化排班，减少「该谁了」的沟通</td><td>周 / 月视图切换、区域泳道、今日高亮、换班入口</td></tr>
+          <tr><td>7</td><td>任务打卡</td><td>执行并留证</td><td>区域检查清单、拍照上传、顺手登记消耗、备注</td></tr>
+          <tr><td>8</td><td><strong>物品台账</strong></td><td>掌握公共物品存量与待办采购</td><td>分类切换、剩余量条、状态标签（充足·偏低·需采购）、「快没了」入口</td></tr>
+          <tr><td>9</td><td>物品详情</td><td>单品的消耗与采购历史</td><td>库存趋势、消耗记录、安全库存设置、采购历史与账单关联</td></tr>
+          <tr><td>10</td><td><strong>公约页</strong></td><td>查看规则、签署、发起变更</td><td>版本徽标、条款分类折叠、条款绑定的系统规则标签、签署状态、版本历史入口</td></tr>
+          <tr><td>11</td><td>提案 / 投票详情</td><td>做出房屋级决定</td><td>提案内容、支持 / 反对、截止倒计时、当前票数与通过阈值对比</td></tr>
+          <tr><td>12</td><td>成员页</td><td>看见每个人的状态</td><td>成员卡片（加入时间 · 分摊权重 · 当前净额 · 贡献分）、邀请新成员、离场结算入口</td></tr>
+          <tr><td>13</td><td>通知中心</td><td>集中处理所有待办消息</td><td>分类（账单 / 值日 / 物品 / 公约）、未读角标、批量处理</td></tr>
+          <tr><td>14</td><td>房屋设置</td><td>基础配置</td><td>房屋信息、区域清单、账单模板、提醒规则、默认分摊方式</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>4.2 关键页面线框</h3>
+    <p style="color:var(--ink-3);font-size:13.5px;margin-top:-4px">以下为移动端优先的布局示意（横向可滑动查看六屏）。桌面端为同一信息架构的双栏展开版。</p>
+    <div class="wf-scroll">
+
+      <!-- 1 首页 -->
+      <div class="wf-col">
+        <div class="phone">
+          <div class="phone-top">
+            <div class="pt">安心小屋 · 3 人合租</div>
+            <div class="ps">本月人均支出 ¥1,284 · 较上月 +6%</div>
+          </div>
+          <div class="phone-bd">
+            <div class="wl">待我处理 · 3</div>
+            <div class="wb warn">
+              <div class="wt"><span>电费 2026-09 待确认</span><span class="wpill o">¥95.47</span></div>
+              <div class="ws">小林垫付 ¥286.40 · 均摊 3 人</div>
+            </div>
+            <div class="wb tint">
+              <div class="wt"><span>今日值日 · 卫生间</span><span class="wpill g">今天</span></div>
+              <div class="ws">检查清单 3 项 · 预计 15 分钟</div>
+              <div class="wbtn" style="margin-top:7px">拍照打卡</div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>纸巾 · 快没了</span><span class="wpill r">需采购</span></div>
+              <div class="ws">采购负责人：小周 · 24h 未响应将公开认领</div>
+            </div>
+            <div class="wl">房屋动态</div>
+            <div class="wb">
+              <div class="ws" style="margin:0;color:var(--ink-2)">小周 完成「卫生间」值日 · 2 小时前</div>
+            </div>
+            <div class="wb">
+              <div class="ws" style="margin:0;color:var(--ink-2)">小陈 认领了「垃圾袋」采购 · 昨天</div>
+            </div>
+          </div>
+          <div class="wnav">
+            <span class="on"><i></i>首页</span><span><i></i>账单</span><span><i></i>值日</span><span><i></i>物品</span><span><i></i>公约</span>
+          </div>
+        </div>
+        <p class="cap">图 4-1 · 房屋驾驶舱</p>
+      </div>
+
+      <!-- 2 账单详情 -->
+      <div class="wf-col">
+        <div class="phone">
+          <div class="phone-top">
+            <div class="pt">电费 · 2026-09</div>
+            <div class="ps">状态：待确认 · 版本 v1 · 截止 10 月 8 日</div>
+          </div>
+          <div class="phone-bd">
+            <div class="wb" style="text-align:center">
+              <div class="ws">账单总额</div>
+              <div style="font-size:23px;font-weight:800">¥286.40</div>
+              <div class="ws">垫付人：小林 · 按人头均摊（公约 v1.2 第 3 条）</div>
+            </div>
+            <div class="wl">分摊明细</div>
+            <div class="wb">
+              <div class="wt"><span>小林</span><span class="wpill g">已确认</span></div>
+              <div class="ws">垫付 ¥286.40 · 应收 ¥190.93</div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>小周</span><span class="wpill g">已确认</span></div>
+              <div class="ws">应付 ¥95.47</div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>小陈</span><span class="wpill o">待确认</span></div>
+              <div class="ws">应付 ¥95.47</div>
+            </div>
+            <div class="wrow">
+              <div class="wb"><div class="ws" style="margin:0">凭证</div><div class="ws" style="margin:0">IMG_4821</div></div>
+              <div class="wb"><div class="ws" style="margin:0">抄表</div><div class="ws" style="margin:0">1,842 → 2,214 kWh</div></div>
+            </div>
+            <div class="wrow">
+              <div class="wbtn" style="background:#fff;color:var(--red);border:1px solid #F0CFCB">有异议</div>
+              <div class="wbtn">确认这笔账</div>
+            </div>
+          </div>
+          <div class="wnav">
+            <span><i></i>首页</span><span class="on"><i></i>账单</span><span><i></i>值日</span><span><i></i>物品</span><span><i></i>公约</span>
+          </div>
+        </div>
+        <p class="cap">图 4-2 · 账单详情</p>
+      </div>
+
+      <!-- 3 结算中心 -->
+      <div class="wf-col">
+        <div class="phone">
+          <div class="phone-top">
+            <div class="pt">结算中心</div>
+            <div class="ps">净额结算：3 笔债务压缩为 2 笔转账</div>
+          </div>
+          <div class="phone-bd">
+            <div class="wb tint">
+              <div class="wt"><span>我的净额</span><span class="wpill g">应收 ¥190.94</span></div>
+              <div class="ws">你替另外 2 人垫付了 2 笔 · 已结清 1 笔</div>
+            </div>
+            <div class="wl">最少转账方案</div>
+            <div class="wb">
+              <div class="wt"><span>小周 → 小林</span><span>¥95.47</span></div>
+              <div class="wrow" style="margin-top:7px">
+                <div class="wpill">我已转账</div><div class="wpill g">已收到</div>
+              </div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>小陈 → 小林</span><span>¥95.47</span></div>
+              <div class="wrow" style="margin-top:7px">
+                <div class="wbtn" style="padding:4px 0">我已转账</div><div class="wpill">待收款</div>
+              </div>
+            </div>
+            <div class="wl">本月已结清</div>
+            <div class="wb"><div class="ws" style="margin:0;color:var(--ink-3)">宽带 2026-09 · ¥120.00 · 9 月 12 日结清</div></div>
+            <div class="wb"><div class="ws" style="margin:0;color:var(--ink-3)">公共采购（纸巾） · ¥29.90 · 9 月 20 日结清</div></div>
+          </div>
+          <div class="wnav">
+            <span><i></i>首页</span><span class="on"><i></i>账单</span><span><i></i>值日</span><span><i></i>物品</span><span><i></i>公约</span>
+          </div>
+        </div>
+        <p class="cap">图 4-3 · 结算中心</p>
+      </div>
+
+      <!-- 4 值日表 -->
+      <div class="wf-col">
+        <div class="phone">
+          <div class="phone-top">
+            <div class="pt">值日表 · 9 月第 4 周</div>
+            <div class="ps">本周共 7 项任务 · 完成 5 项</div>
+          </div>
+          <div class="phone-bd">
+            <div class="wcal">
+              <div>21</div><div>22</div><div>23</div><div>24</div><div>25</div><div>26</div><div class="today">27</div>
+              <div class="me">28</div><div class="other">29</div><div class="other">30</div><div>1</div><div>2</div><div>3</div><div>4</div>
+            </div>
+            <div class="wl">今日任务（我）</div>
+            <div class="wb tint">
+              <div class="wt"><span>卫生间</span><span class="wpill g">今天 22:00 前</span></div>
+              <div class="ws">地漏滤网 · 台面水渍 · 马桶 · 垃圾清运</div>
+              <div class="wrow" style="margin-top:7px">
+                <div class="wbtn" style="padding:5px 0">打卡</div>
+                <div class="wbtn gh" style="padding:5px 0">换班</div>
+              </div>
+            </div>
+            <div class="wl">本周其他</div>
+            <div class="wb">
+              <div class="wt"><span>厨房 · 小周</span><span class="wpill g">已完成</span></div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>垃圾清运 · 小陈</span><span class="wpill r">已逾期 · 顺延</span></div>
+            </div>
+          </div>
+          <div class="wnav">
+            <span><i></i>首页</span><span><i></i>账单</span><span class="on"><i></i>值日</span><span><i></i>物品</span><span><i></i>公约</span>
+          </div>
+        </div>
+        <p class="cap">图 4-4 · 值日表</p>
+      </div>
+
+      <!-- 5 物品台账 -->
+      <div class="wf-col">
+        <div class="phone">
+          <div class="phone-top">
+            <div class="pt">公共物品</div>
+            <div class="ps">本月公共采购支出 ¥187.30（较上月 +32%）</div>
+          </div>
+          <div class="phone-bd">
+            <div class="wl">消耗品</div>
+            <div class="wb warn">
+              <div class="wt"><span>抽纸</span><span class="wpill r">需采购</span></div>
+              <div class="wbar"><i class="r" style="width:5%"></i></div>
+              <div class="ws">剩余 0 包 · 安全库存 2 包 · 采购负责人 小周</div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>垃圾袋</span><span class="wpill g">充足</span></div>
+              <div class="wbar"><i style="width:72%"></i></div>
+              <div class="ws">剩余 36 只 · 预计可用 24 天</div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>洗洁精</span><span class="wpill o">偏低</span></div>
+              <div class="wbar"><i class="o" style="width:25%"></i></div>
+              <div class="ws">剩余约 1/4 · 预计 5 天后用完</div>
+            </div>
+            <div class="wl">共享设备</div>
+            <div class="wb">
+              <div class="wt"><span>吸尘器</span><span class="wpill o">小陈借用中</span></div>
+              <div class="ws">预计 20:00 归还 · 到期前 2 小时提醒</div>
+            </div>
+            <div class="wbtn">我买了 / 我认领补货</div>
+          </div>
+          <div class="wnav">
+            <span><i></i>首页</span><span><i></i>账单</span><span><i></i>值日</span><span class="on"><i></i>物品</span><span><i></i>公约</span>
+          </div>
+        </div>
+        <p class="cap">图 4-5 · 物品台账</p>
+      </div>
+
+      <!-- 6 公约 -->
+      <div class="wf-col">
+        <div class="phone">
+          <div class="phone-top">
+            <div class="pt">室友公约</div>
+            <div class="ps">当前生效：v1.2 · 全员已签署（3/3）</div>
+          </div>
+          <div class="phone-bd">
+            <div class="wl">费用与分摊</div>
+            <div class="wb">
+              <div class="wt"><span>房租水电按人头均摊</span><span class="wpill g">已绑定 M1</span></div>
+              <div class="ws">录入账单时自动选中「均摊」</div>
+            </div>
+            <div class="wl">卫生与清洁</div>
+            <div class="wb">
+              <div class="wt"><span>垃圾每日 22:00 前清运</span><span class="wpill g">已绑定 M2</span></div>
+              <div class="ws">自动生成日频任务并设置提醒</div>
+            </div>
+            <div class="wb">
+              <div class="wt"><span>马桶圈用完放下</span><span class="wpill">仅靠自觉</span></div>
+              <div class="ws">无法由系统执行，仅作共识记录</div>
+            </div>
+            <div class="wl">待处理</div>
+            <div class="wb warn">
+              <div class="wt"><span>提案：夏天空调统一 26℃</span><span class="wpill o">剩余 2 天</span></div>
+              <div class="ws">2 人支持 / 1 人未投票 · 阈值 2 票</div>
+            </div>
+            <div class="wbtn gh">查看版本历史（v1.0 → v1.2）</div>
+          </div>
+          <div class="wnav">
+            <span><i></i>首页</span><span><i></i>账单</span><span><i></i>值日</span><span><i></i>物品</span><span class="on"><i></i>公约</span>
+          </div>
+        </div>
+        <p class="cap">图 4-6 · 公约页</p>
+      </div>
+
+    </div>
+
+    <h3>4.3 核心用户操作路径</h3>
+
+    <div class="panel">
+      <div class="panel-h"><span class="dot"></span>路径 A · 一笔电费的完整生命周期（最高频，每月 1–2 次）</div>
+      <p style="font-size:14px;color:var(--ink-2);margin:0 0 10px">
+        首页收到「待录入」提醒 → 进入新建账单，选「电费」模板 → 输入总额 286.40 元（或录入抄表读数 1,842→2,214 kWh）→ 选择垫付人＝小林 → <strong>分摊方式自动带出公约 v1.2 第 3 条的「按人头均摊」</strong> → 界面实时显示「每人 ¥95.47」→ 上传账单截图 → 提交。
+      </p>
+      <p style="font-size:14px;color:var(--ink-2);margin:0 0 10px">
+        小周、小陈收到通知 → 小周点「确认」，小陈点「确认」→ 状态转为「待支付」→ 小林在结算中心看到「小周 → 小林 ¥95.47」「小陈 → 小林 ¥95.47」→ 两人转账并点「我已转账」→ 小林点「已收到」→ 账单状态变为「已结清」，进入本月结算单。
+      </p>
+      <div class="note" style="margin:0;font-size:13.5px">
+        <b>异常分支：</b>若小陈点「有异议」并注明「我这周出差 5 天，按天折算更合理」→ 账单进入「协商中」→ 小林修改为按实际居住天数分摊 → 系统生成 <code>v2</code> 并重新推送全员 → 双方确认后生效 → <code>v1</code> 作为历史版本保留可查。整个过程不需要在群里吵一句。
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="dot b"></span>路径 B · 临时换班</div>
+      <p style="font-size:14px;color:var(--ink-2);margin:0">
+        小周周四要出差 → 打开值日表 → 点自己周四的「卫生间」任务 → 申请换班 → 选目标室友小陈，填原因「周四出差」→ 小陈收到通知，点「同意」→ 系统把任务转给小陈，双方值日表同步更新并留下变更记录。<strong>三步操作，全程不需要口头确认，也不会出现「我记得是你」。</strong>
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="dot a"></span>路径 C · 纸巾用完</div>
+      <p style="font-size:14px;color:var(--ink-2);margin:0">
+        任何人用完最后一包 → 在首页或物品页点「快没了」（约 2 秒）→ 系统判定低于安全库存 → 通知本月采购负责人小周 → 小周点「我去买」认领 → 买回上传小票 ¥29.90 → 系统自动生成一次性账单（3 人各 ¥9.97）并回补库存为 4 包 → 账单进入 M1 的常规确认流程。<strong>「谁买」不再取决于谁先不好意思。</strong>
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="dot r"></span>路径 D · 新室友加入 / 有人搬走</div>
+      <p style="font-size:14px;color:var(--ink-2);margin:0 0 10px">
+        <strong>加入：</strong>老成员点「邀请」生成二维码 → 新人扫码，填昵称与房间 → 逐条阅读并确认当前生效公约 v1.2 的每一项条款 → 自动加入值日轮值序列、按剩余居住天数折算本月房租水电、获得物品台账权限。
+      </p>
+      <p style="font-size:14px;color:var(--ink-2);margin:0">
+        <strong>搬走：</strong>点「我要搬走」→ 选搬出日期 → 系统生成离场结算单（应分摊未付 + 垫付未收 + 未完成值日折算 + 押金建议返还额）→ 其余成员共同确认 → 归档进房屋历史，剩余成员继续使用同一套账本。
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 05 ================= -->
+  <section id="s5">
+    <div class="sec-num">05</div>
+    <h2>差异化设计</h2>
+    <p class="sec-sub">在四大模块之外，补两个直击真实痛点、且能真正促进协作的功能点。</p>
+
+    <div class="mod">
+      <div class="mod-h">
+        <div class="mod-id" style="background:var(--accent)">D1</div>
+        <div>
+          <h3>「力账」——把劳动也记进账本</h3>
+          <p class="mod-sub">钱账清了，力账不清，一样会崩</p>
+        </div>
+      </div>
+      <div class="mod-b">
+        <p><strong>解决什么：</strong>调研显示清洁问题是合租第一大矛盾源（60%），显著高于账单（30%）。但市面上的合租工具几乎只做「钱账」。真正让关系破裂的往往不是钱，而是<strong>「凭什么总是我在做」</strong>——而这句话之所以说不出口，是因为「做了多少」根本没有记录，说出来就变成了主观感受。</p>
+
+        <h4>怎么运作</h4>
+        <div class="grid g3">
+          <div class="card">
+            <div class="panel-h"><span class="dot"></span>得分来源</div>
+            <ul style="margin:0;font-size:13.5px;color:var(--ink-2)">
+              <li>完成一次值日任务 <strong>+10</strong></li>
+              <li>被他人验收通过 <strong>+2</strong></li>
+              <li>认领一次公共采购 <strong>+8</strong></li>
+              <li>主动上报一项需要维修的问题 <strong>+5</strong></li>
+              <li>连续 4 周按时完成任务 <strong>+15</strong></li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot a"></span>怎么用</div>
+            <ul style="margin:0;font-size:13.5px;color:var(--ink-2)">
+              <li><strong>抵扣小额公共开销</strong>：每季度可兑换一次，用于抵消垃圾袋、纸巾这类零头分摊，单次上限约 30 元</li>
+              <li><strong>排班豁免券</strong>：每人每季度 1 张，可跳过 1 次值日（由系统顺延给其他成员，避免临时开口求人）</li>
+              <li><strong>优先选择权</strong>：分高者可优先挑选下季度的固定负责区域</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="panel-h"><span class="dot r"></span>反内卷设计（关键）</div>
+            <ul style="margin:0;font-size:13.5px;color:var(--ink-2)">
+              <li><strong>不做公开排行榜</strong>：只显示「你自己的分数」「房屋平均分」「你比平均多做了多少」</li>
+              <li><strong>不做扣分惩罚</strong>：未完成只记录事实，不扣分——惩罚会让产品变成监工，反而激发对抗</li>
+              <li><strong>不做无限累积</strong>：按季度清零，避免老成员用历史分数长期占优</li>
+            </ul>
+          </div>
+        </div>
+        <div class="tip" style="margin-top:16px"><b>为什么这个设计成立：</b>它把「我做得比你多」这句会伤感情的话，翻译成一条系统记录。想表达不满的人不必开口，数据已经替他说了；而被提醒的人收到的也不是指责，而是一个客观数字。<strong>这正是本产品「对事不对人」原则最集中的体现。</strong></div>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-h">
+        <div class="mod-id" style="background:var(--blue)">D2</div>
+        <div>
+          <h3>「无社交压力的催办」——把开口要钱这件事从人嘴里挪走</h3>
+          <p class="mod-sub">用户迟迟不结算的真正原因，不是缺钱，是不好意思催</p>
+        </div>
+      </div>
+      <div class="mod-b">
+        <p><strong>解决什么：</strong>合租金额通常只有几十到几百元，正好落在「值得计较但不好意思计较」的区间。调研显示 86% 的年轻租客曾用被动攻击手段表达不满（沉默、贴便签、故意不倒垃圾）——这些行为的共同前提是<strong>「说了怕伤感情」</strong>。产品要消灭的不是懒惰，而是这个尴尬。<strong>产品不做「催收」，只做「提醒系统」。</strong></p>
+
+        <h4>四种递进式手段</h4>
+        <div class="flow">
+          <div class="step">
+            <div class="k">手段 1 · 零点名</div>
+            <h5>匿名聚合提醒</h5>
+            <p>只推送「本房屋有 2 笔待确认、1 笔待支付」，不指向任何个人。被提醒的人自己心里有数，不需要有人在群里点名。</p>
+          </div>
+          <div class="step">
+            <div class="k">手段 2 · 升级</div>
+            <h5>三段式阶梯提醒</h5>
+            <p>D0 生成通知 → D+2 提醒未确认者本人 → D+5 提醒未支付者本人 → D+7 通知全体，且表述为公共事项「本房屋有 2 笔未结清」。从「指责某人」变成「陈述房屋状态」。</p>
+          </div>
+          <div class="step">
+            <div class="k">手段 3 · 转化</div>
+            <h5>一键代垫</h5>
+            <p>若某人确实手头不便，其他成员可以「替他先垫上」，自动形成一笔新的欠款记录。把「催」变成「帮」——既解决了当下的问题，也避免了正面冲突。</p>
+          </div>
+          <div class="step">
+            <div class="k">手段 4 · 抹平</div>
+            <h5>贡献分抵零头</h5>
+            <p>欠 3.5 元这种事不值得开口，但一直挂着同样伤人。允许用贡献分抵扣 30 元以内的零头分摊，把小额债务直接归零。</p>
+          </div>
+        </div>
+
+        <div class="tip"><b>一个容易被忽略的细节：</b>提醒本身也可能成为新的扰民源。所以安静时段（默认 23:00–08:00）内所有提醒只进 App、不弹系统横幅；同一事项 24 小时内最多提醒一次；提醒文案统一使用陈述句，从不出现「你」这个主语。</div>
+      </div>
+    </div>
+
+    <h3>备选差异化点（可作三期候选）</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="panel-h"><span class="dot"></span>搬入 / 搬出结算单</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">面向人员流动场景。新成员加入时生成「继承清单」（当前欠款、我的排班、需遵守的公约条款）；退租时一键生成净额结算单。合租人员平均 6–12 个月换一轮，账本不应随人走而作废。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot"></span>用量趋势与异常提醒</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">通过每月抄表读数生成用量折线，与上月、去年同期对比；用量异常上升时给出中性提示（「本月用电较上月增加 41%，可能涉及空调使用时长增加或设备异常」）。把「你怎么用这么多」的发言权交给数据，避免变成互相质疑。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 06 ================= -->
+  <section id="s6">
+    <div class="sec-num">06</div>
+    <h2>落地路线与验证指标</h2>
+    <p class="sec-sub">不做一次性大而全，按「先跑通最小闭环、再用数据决定下一步」推进。</p>
+
+    <h3>6.1 分阶段范围</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>阶段</th><th>交付模块</th><th>要跑通的核心闭环</th><th>判断是否继续的依据</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>一期 MVP</strong></td>
+            <td>M0 + M1 + M2</td>
+            <td>建房 → 录一笔账单 → 全员确认 → 结清；以及 生成排班 → 打卡 → 完成</td>
+            <td>房屋在 7 天内是否完成至少 2 笔账单的完整确认；值日打卡率是否 ≥ 50%</td>
+          </tr>
+          <tr>
+            <td><strong>二期</strong></td>
+            <td>M3 + M4</td>
+            <td>消耗登记 → 补货 → 小票自动生成账单；公约条款绑定系统规则</td>
+            <td>物品模块的人均月使用次数是否 ≥ 4 次；公约绑定率是否 ≥ 30% 的条款</td>
+          </tr>
+          <tr>
+            <td><strong>三期</strong></td>
+            <td>M5 完整版 + 备选差异点</td>
+            <td>力账与贡献分、搬入搬出结算单、用量趋势</td>
+            <td>力账是否被真实使用（而非仅被查看）；人员流动时的结算完成率</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><b>为什么把 M4 放二期：</b>公约绑定是整个产品最有说服力的差异点，但它的价值取决于用户是否已经养成记录习惯。在没有 M1/M2 的真实数据之前，公约只是一份更漂亮的通知栏——先把地基做实，再让规则生效。</div>
+
+    <h3>6.2 冷启动：降低第一个人的门槛</h3>
+    <ul>
+      <li><strong>一个人就能建房屋</strong>：创建者不需要等待其他人同意即可开始使用，先记录自己垫付的钱，后续再邀请</li>
+      <li><strong>其余成员扫码即入</strong>：不强制完整注册，扫码填昵称即可参与确认与排班（降低「室友不配合」这一最大落地阻力）</li>
+      <li><strong>不做群聊替代品</strong>：产品不试图取代微信群，只承接微信群做不好的部分——记录、计算、提醒、留痕</li>
+      <li><strong>首次进入的引导</strong>：用一个真实场景（如「把上月电费录进来」）替代产品功能介绍页，5 分钟内产生第一条有价值的数据</li>
+    </ul>
+
+    <h3>6.3 关键验证指标</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>指标</th><th>定义</th><th>目标</th><th>它回答什么问题</th></tr></thead>
+        <tbody>
+          <tr><td><strong>账单 72 小时确认率</strong></td><td>发起后 72 小时内完成全员确认的账单占比</td><td>≥ 70%</td><td>协作闭环是否真的跑得动（这是产品的生死指标）</td></tr>
+          <tr><td><strong>值日按时完成率</strong></td><td>截止时间前完成打卡的任务占比</td><td>≥ 65%</td><td>排班模块是否被真正使用，而不只是被看一眼</td></tr>
+          <tr><td><strong>人均月活跃天数</strong></td><td>单个成员每月打开产品的天数</td><td>≥ 8 天</td><td>产品是否成为日常习惯，而非月末才想起来的工具</td></tr>
+          <tr><td><strong>房屋结构完整率</strong></td><td>成员数 ≥ 2 且两个以上模块有真实数据的房屋占比</td><td>≥ 60%</td><td>是否只是「一个人的独角戏」</td></tr>
+          <tr><td><strong>结算闭环率</strong></td><td>产生过债务且最终完成双向确认结清的比例</td><td>≥ 80%</td><td>产品是否真的减少了扯皮，而非只把账记下来</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 07 ================= -->
+  <section id="s7">
+    <div class="sec-num">07</div>
+    <h2>设计取舍与风险</h2>
+    <p class="sec-sub">几个必须提前想清楚的问题，以及本方案给出的判断。</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="panel-h"><span class="dot"></span>取舍一：不做精确记账</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">产品只解决「分摊与追回」，不做消费分类、预算分析、资产统计。那些是记账 App 的职责。合租用户要的是「我不吃亏」，不是财务洞察。功能越像记账软件，室友越不愿意打开。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot a"></span>取舍二：不强制、不扣分</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)">消耗登记与值日打卡都不设惩罚性机制。强制只会让用户绕开产品，回到微信群里用嘴解决——那恰恰是问题的源头。所有约束都依赖「可见性」，而非「权限」。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot b"></span>风险一：多数人不配合，产品失效</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)"><strong>风险：</strong>只要有一个人不确认账单，整个闭环就卡住。<br><strong>应对：</strong>① 72 小时未响应默认通过（写入公约）；② 允许发起人在三人以上房屋中「记录对方已知情」；③ 结算中心的净额视图始终可用，即使部分账单未确认，也不影响其他人看到全局。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot r"></span>风险二：被用来「监视室友」</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)"><strong>风险：</strong>记录功能天然可以被扭曲成互相举报的工具，加剧关系紧张。<br><strong>应对：</strong>不做个人消耗排行榜；不提供「查看某人历史欠款」这类针对个人的汇总视图；所有数据默认对全体可见，不做私密指控通道；贡献分只对自己可见。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot"></span>风险三：金额过小，用户觉得不值</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)"><strong>风险：</strong>人均月租分摊 2000–2500 元的区间内，单笔纠纷往往只有几十元，用户可能觉得「为这点钱用个 App 太累」。<br><strong>应对：</strong>价值主张不能落在「省钱」上，而应落在「省心」上——宣传重点是「不用开口要钱」「不用记得谁该扫地」，而非「帮你算账」。</p>
+      </div>
+      <div class="card">
+        <div class="panel-h"><span class="dot a"></span>风险四：换人即重建</div>
+        <p style="margin:0;font-size:14px;color:var(--ink-2)"><strong>风险：</strong>合租人员流动频繁，一个人搬走可能带走整个房屋的使用习惯。<br><strong>应对：</strong>房屋账本与个人账号解耦，人走账留；加入流程尽量轻（扫码 + 逐条签署）；把「历史记录完整可查」本身做成留存理由——新房客更愿意接受一套有记录的规则。</p>
+      </div>
+    </div>
+  </section>
+
+
+
+  </main>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <span>合租生活管家 Roomies · 产品设计方案 v1.0</span>
+    <span>文档类型：产品结构 / 功能设计（不含技术实现）</span>
+  </div>
+</footer>
+
+<script>
+/* 目录高亮 */
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  function upd(){
+    var y=window.scrollY+120,idx=0;
+    secs.forEach(function(s,i){ if(s && s.offsetTop<=y) idx=i; });
+    links.forEach(function(a,i){ a.classList.toggle('on', i===idx); });
+  }
+  window.addEventListener('scroll',upd,{passive:true});upd();
+})();
+</script>
+</body>
+</html>

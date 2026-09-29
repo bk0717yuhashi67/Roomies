@@ -1,0 +1,11 @@
+# 临时调试脚本
+_*.cjs
+_*.js
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 依赖（本项目无构建步骤，正常不会产生）
+node_modules/
