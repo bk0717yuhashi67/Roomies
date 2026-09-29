@@ -56,15 +56,18 @@ button{cursor:pointer}
 /* ---------- tabs ---------- */
 .tabs{position:sticky;top:0;z-index:20;display:flex;background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex:1 0 auto;padding:11px 14px;background:none;border:none;border-bottom:2px solid transparent;font-size:13.5px;color:var(--ink-3);font-weight:600;white-space:nowrap}
-.tab.on{color:var(--primary);border-bottom-color:var(--primary)}
-.tab .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:5px;border-radius:99px;background:var(--accent);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
+.tab{flex:1 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:none;border:none;border-bottom:2px solid transparent;font-size:13.5px;color:var(--ink-3);font-weight:600;white-space:nowrap;transition:color .15s,background .15s,border-color .15s}
+.tab:hover{color:var(--ink-2);background:var(--surface-2)}
+.tab.on{color:var(--primary);border-bottom-color:var(--primary);background:var(--primary-soft)}
+.tab svg{width:15px;height:15px;flex:0 0 auto;stroke-width:1.9}
+.tab .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:2px;border-radius:99px;background:var(--accent);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
 
 /* ---------- view ---------- */
 .view{flex:1;padding:16px 18px 40px}
 .sec{margin-bottom:20px}
 .sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 9px}
-.sec-h h2{margin:0;font-size:14px;font-weight:800;letter-spacing:.01em}
+.sec-h h2{margin:0;font-size:14px;font-weight:800;letter-spacing:.01em;display:flex;align-items:center;gap:7px}
+.sec-h h2::before{content:"";width:3px;height:13px;border-radius:2px;background:var(--primary);flex:0 0 auto}
 .sec-h span{font-size:12px;color:var(--ink-3)}
 
 /* ---------- card ---------- */
@@ -72,8 +75,9 @@ button{cursor:pointer}
 .card.tint{background:var(--primary-soft);border-color:#CFE6DF}
 .card.warn{background:var(--accent-soft);border-color:#F0DCBC}
 .card.alert{background:var(--red-soft);border-color:#F0CFCB}
-.card.tap{cursor:pointer}
-.card.tap:hover{border-color:#C9E2DA}
+.card.tap{cursor:pointer;transition:transform .14s,box-shadow .18s,border-color .18s}
+.card.tap:hover{transform:translateY(-2px);border-color:#C9E2DA;box-shadow:0 10px 26px -16px rgba(20,33,29,.38)}
+.card.tap:active{transform:translateY(0);box-shadow:var(--shadow)}
 .cr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .cr h3{margin:0;font-size:14.5px;font-weight:700;line-height:1.4}
 .cr p{margin:3px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
@@ -100,18 +104,30 @@ button{cursor:pointer}
 .bar i.o{background:var(--accent)}
 .bar i.r{background:var(--red)}
 
-/* ---------- buttons ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:10px;border:1px solid transparent;background:var(--primary);color:#fff;font-size:13.5px;font-weight:700;transition:.15s}
-.btn:hover{background:#1A6B57}
-.btn.ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line)}
-.btn.ghost:hover{background:var(--surface-2);border-color:#CDD8D3}
-.btn.danger{background:var(--surface);color:var(--red);border-color:#F0CFCB}
-.btn.danger:hover{background:var(--red-soft)}
+/* ---------- buttons：三级主次 ---------- */
+/* ① 主操作：一屏只应有一个 —— 实心渐变 + 投影，视觉权重最高 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:11px;border:1px solid transparent;background:linear-gradient(180deg,var(--primary-2),var(--primary));color:#fff;font-size:13.5px;font-weight:700;transition:transform .12s,box-shadow .18s,filter .18s;box-shadow:0 4px 12px -6px rgba(30,122,99,.75)}
+.btn:hover{filter:brightness(1.06);box-shadow:0 7px 18px -7px rgba(30,122,99,.85)}
+.btn:active{transform:scale(.97);box-shadow:0 2px 6px -4px rgba(30,122,99,.7)}
+/* ② 次操作：描边、无投影 —— 权重明显低于主操作 */
+.btn.ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line);box-shadow:none;font-weight:600}
+.btn.ghost:hover{background:var(--surface-2);border-color:#C9D6D0;box-shadow:none;filter:none}
+.btn.ghost:active{transform:scale(.97);box-shadow:none}
+/* ③ 弱操作：纯文字（关闭 / 取消）—— 不参与视觉竞争 */
+.btn.link{background:none;color:var(--ink-3);box-shadow:none;padding:8px 12px;font-weight:600}
+.btn.link:hover{background:var(--surface-2);color:var(--ink-2);box-shadow:none;filter:none}
+.btn.link:active{transform:none}
+/* ④ 破坏性操作：语义明确但不抢眼 */
+.btn.danger{background:var(--surface);color:var(--red);border-color:#F0CFCB;box-shadow:none;font-weight:600}
+.btn.danger:hover{background:var(--red-soft);border-color:#E6BAB5;box-shadow:none;filter:none}
 .btn.wide{width:100%}
-.btn.sm{padding:6px 12px;font-size:12.5px;border-radius:8px}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btnrow{display:flex;gap:8px;margin-top:11px}
+.btn.sm{padding:7px 14px;font-size:12.5px;border-radius:9px}
+.btn.lg{padding:12px 22px;font-size:14.5px;border-radius:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.btnrow{display:flex;gap:8px;margin-top:12px}
 .btnrow > .btn{flex:1}
+/* 主次并排：主按钮占得更宽，视线自然落上去 */
+.btnrow.pri{display:grid;grid-template-columns:1.7fr 1fr}
 
 /* ---------- form ---------- */
 .field{margin-bottom:12px}
@@ -148,8 +164,39 @@ a{color:var(--primary)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
 /* ---------- misc ---------- */
-.empty{text-align:center;padding:34px 16px;color:var(--ink-3);font-size:13.5px}
-.empty b{display:block;color:var(--ink-2);font-size:14.5px;margin-bottom:6px}
+.empty{text-align:center;padding:36px 16px;color:var(--ink-3);font-size:13.5px}
+.empty b{display:block;color:var(--ink-2);font-size:15px;margin-bottom:6px}
+.empty .em-ico{width:58px;height:58px;margin:0 auto 14px;border-radius:20px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;font-size:25px;color:var(--primary);font-weight:700}
+
+/* ---------- 首页概览卡（视觉重心） ---------- */
+.hero{position:relative;overflow:hidden;border-radius:16px;padding:18px;margin-bottom:18px;color:#fff;background:linear-gradient(135deg,#1E7A63 0%,#2A9C80 58%,#3FB394 100%);box-shadow:0 14px 32px -20px rgba(30,122,99,.95)}
+.hero::after{content:"";position:absolute;right:-42px;top:-52px;width:164px;height:164px;border-radius:50%;background:rgba(255,255,255,.10)}
+.hero::before{content:"";position:absolute;right:24px;bottom:-62px;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.07)}
+.hero > *{position:relative}
+.hero .h-lbl{font-size:12px;opacity:.84;font-weight:600;letter-spacing:.05em}
+.hero .h-num{font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.16;margin:3px 0;font-variant-numeric:tabular-nums}
+.hero .h-note{font-size:12.5px;opacity:.86}
+.hero .h-stats{display:flex;gap:8px;margin-top:15px}
+.hero .h-stat{flex:1;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:11px;padding:9px 11px}
+.hero .h-stat b{display:block;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.32}
+.hero .h-stat span{font-size:11px;opacity:.85}
+.hero .h-acts{display:flex;gap:8px;margin-top:15px}
+.hero .btn{flex:1}
+.hero .btn.on-hero{background:#fff;color:#14624F;box-shadow:0 8px 18px -10px rgba(0,0,0,.55)}
+.hero .btn.on-hero:hover{background:#F1FBF7;filter:none}
+.hero .btn.on-hero-ghost{background:rgba(255,255,255,.17);color:#fff;border-color:rgba(255,255,255,.32);box-shadow:none}
+.hero .btn.on-hero-ghost:hover{background:rgba(255,255,255,.27);filter:none;box-shadow:none}
+
+/* ---------- 卡片类型标识 ---------- */
+.tico{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:14px;font-weight:800;letter-spacing:0}
+.tico.money{background:var(--primary-soft);color:var(--primary)}
+.tico.shift{background:var(--blue-soft);color:var(--blue)}
+.tico.item{background:var(--accent-soft);color:var(--accent)}
+.tico.pact{background:#F0EAF7;color:#7A5AA8}
+.tico.warn{background:var(--red-soft);color:var(--red)}
+.tico.sm-tico{width:24px;height:24px;border-radius:8px;font-size:11px}
+.card .cr.ico{gap:11px}
+.card .cr.ico .cr-b{flex:1;min-width:0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid2 .card{margin-bottom:0}
 .kvmini{font-size:12.5px;color:var(--ink-3);margin-top:8px;display:flex;flex-wrap:wrap;gap:10px}
@@ -161,7 +208,7 @@ a{color:var(--primary)}
   <header class="top">
     <div class="top-r">
       <div class="brand"><i></i>合租生活管家<span class="badge">Demo</span></div>
-      <button class="btn ghost sm" id="btnReset" type="button">重置数据</button>
+      <button class="btn link sm" id="btnReset" type="button">重置数据</button>
     </div>
     <div class="who">
       <label for="whoami">当前身份</label>
@@ -430,6 +477,13 @@ function todoCount() {
 
 function renderTabs() {
   const pend = S.bills.filter(b => b.status === 'confirming' && b.confirm[S.me] === 'pending').length;
+  const ICO = {
+    home: '<path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-4.5h-5V17H4a1 1 0 0 1-1-1z"/>',
+    bills: '<path d="M5 3h10v14l-2.5-1.6L10 17l-2.5-1.6L5 17z"/><path d="M8 7h4M8 10.5h4"/>',
+    shift: '<path d="M4 6.5 5.6 8 8.5 5"/><path d="M4 12l1.6 1.5L8.5 10.5"/><path d="M11 7h5M11 13h5"/>',
+    items: '<path d="M3 7.5 10 3.5l7 4V16l-7 4-7-4z"/><path d="M3 7.5l7 4 7-4M10 11.5V20"/>',
+    pact: '<path d="M6 3h6l4 3.5V21H6z"/><path d="M9 8h5M9 12h5M9 16h3"/>'
+  };
   const t = [
     { k: 'home', n: '首页' },
     { k: 'bills', n: '账单', c: pend },
@@ -438,7 +492,9 @@ function renderTabs() {
     { k: 'pact', n: '公约' }
   ];
   $('#tabs').innerHTML = t.map(x =>
-    `<button class="tab${TAB === x.k ? ' on' : ''}" data-act="tab" data-id="${x.k}" type="button">${x.n}${x.c ? `<span class="cnt">${x.c}</span>` : ''}</button>`
+    `<button class="tab${TAB === x.k ? ' on' : ''}" data-act="tab" data-id="${x.k}" type="button">` +
+    `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[x.k]}</svg>` +
+    `<span>${x.n}</span>${x.c ? `<span class="cnt">${x.c}</span>` : ''}</button>`
   ).join('');
 }
 
@@ -457,18 +513,37 @@ function viewHome() {
   const mySwap = S.swaps.filter(s => s.to === me && s.status === 'pending');
   const total = todoBills.length + todayTasks.length + toRecv.length + mySwap.length;
   const monthBills = S.bills.filter(b => b.date.slice(0, 7) === today.slice(0, 7));
-  const perHead = monthBills.reduce((s, b) => s + b.amount, 0) / S.members.length;
+  const perHead = S.members.length ? monthBills.reduce((s, b) => s + b.amount, 0) / S.members.length : 0;
 
   let h = '';
+
+  /* 概览卡：第一屏的视觉重心，一眼看到「我的净额」与待办数 */
+  const netTxt = myNet > 0.005 ? '+' + fmt(myNet) : (myNet < -0.005 ? '-' + fmt(Math.abs(myNet)) : fmt(0));
+  const netNote = myNet > 0.005 ? '应收 · 别人欠你' : (myNet < -0.005 ? '应付 · 你欠别人' : '已全部结清');
+  h += `<div class="hero">
+    <div class="h-lbl">我的净额</div>
+    <div class="h-num">${netTxt}</div>
+    <div class="h-note">${netNote} · ${esc(S.house.name)}</div>
+    <div class="h-stats">
+      <div class="h-stat"><b>${total}</b><span>待我处理</span></div>
+      <div class="h-stat"><b>${fmt(perHead)}</b><span>本月人均</span></div>
+      <div class="h-stat"><b>${S.members.length}</b><span>位室友</span></div>
+    </div>
+    <div class="h-acts">
+      <button class="btn on-hero" data-act="settle" type="button">前往结算中心</button>
+      <button class="btn on-hero-ghost" data-act="newbill" type="button">新建账单</button>
+    </div>
+  </div>`;
+
   h += `<div class="sec">
     <div class="sec-h"><h2>待我处理</h2><span>${total ? total + ' 项' : '暂无待办'}</span></div>`;
 
   if (!total) {
-    h += `<div class="card"><div class="cr"><div><h3>全部处理完了 👍</h3><p>当前没有需要你确认的事项</p></div></div></div>`;
+    h += `<div class="empty"><div class="em-ico">✓</div><b>全部处理完了</b>当前没有需要你确认的事项</div>`;
   }
   todoBills.forEach(b => {
     h += card({
-      cls: 'warn', act: 'bill', id: b.id,
+      cls: 'warn', act: 'bill', id: b.id, ico: '¥', icoCls: 'money',
       title: b.title + ' 待确认',
       sub: `${esc(mName(b.payerId))}垫付 ${fmt(b.amount)} · ${b.rule === 'even' ? '均摊' : '按权重'}`,
       pill: fmt(b.shares[me] || 0), pillCls: 'o'
@@ -476,28 +551,43 @@ function viewHome() {
   });
   todayTasks.forEach(t => {
     h += `<div class="card tint">
-      <div class="cr"><div><h3>今日值日 · ${esc(t.area)}</h3><p>检查清单 ${t.checklist.length} 项 · 22:00 前完成</p></div><span class="pill g">今天</span></div>
-      <div class="btnrow">
+      <div class="cr ico">
+        <span class="tico shift">✓</span>
+        <div class="cr-b"><h3>今日值日 · ${esc(t.area)}</h3><p>检查清单 ${t.checklist.length} 项 · 22:00 前完成</p></div>
+        <span class="pill g">今天</span>
+      </div>
+      <div class="btnrow pri">
         <button class="btn sm" data-act="checkin" data-id="${t.id}" type="button">拍照打卡</button>
         <button class="btn ghost sm" data-act="swap" data-id="${t.id}" type="button">申请换班</button>
       </div></div>`;
   });
   todayOthers.forEach(t => {
     h += `<div class="card">
-      <div class="cr"><div><h3>今日值日 · ${esc(t.area)}</h3>
-        <p>今天由 ${esc(mName(t.assigneeId))} 负责 · ${t.status === 'done' ? '已完成' : '22:00 前完成'}</p></div>
-        ${t.status === 'done' ? '<span class="pill g">已完成</span>' : '<span class="pill">进行中</span>'}</div></div>`;
+      <div class="cr ico">
+        <span class="tico shift">✓</span>
+        <div class="cr-b"><h3>今日值日 · ${esc(t.area)}</h3>
+          <p>今天由 ${esc(mName(t.assigneeId))} 负责 · ${t.status === 'done' ? '已完成' : '22:00 前完成'}</p></div>
+        ${t.status === 'done' ? '<span class="pill g">已完成</span>' : '<span class="pill">进行中</span>'}
+      </div></div>`;
   });
   toRecv.forEach(t => {
     h += `<div class="card">
-      <div class="cr"><div><h3>${esc(mName(t.from))} 已向你转账</h3><p>对方标记于 ${esc(t.paidAt)} · 确认后该笔债务关闭</p></div><span class="amt">${fmt(t.amount)}</span></div>
+      <div class="cr ico">
+        <span class="tico money">¥</span>
+        <div class="cr-b"><h3>${esc(mName(t.from))} 已向你转账</h3><p>对方标记于 ${esc(t.paidAt)} · 确认后该笔债务关闭</p></div>
+        <span class="amt">${fmt(t.amount)}</span>
+      </div>
       <div class="btnrow"><button class="btn sm" data-act="recv" data-id="${t.id}" type="button">确认已收到</button></div></div>`;
   });
   mySwap.forEach(s => {
     const tk = S.tasks.find(x => x.id === s.taskId) || { area: '值日', date: '' };
     h += `<div class="card">
-      <div class="cr"><div><h3>${esc(mName(s.from))} 申请与你换班</h3><p>${esc(dcn(tk.date))} ${esc(tk.area)} · 原因：${esc(s.reason || '未填写')}</p></div><span class="pill o">待响应</span></div>
-      <div class="btnrow">
+      <div class="cr ico">
+        <span class="tico shift">⇄</span>
+        <div class="cr-b"><h3>${esc(mName(s.from))} 申请与你换班</h3><p>${esc(dcn(tk.date))} ${esc(tk.area)} · 原因：${esc(s.reason || '未填写')}</p></div>
+        <span class="pill o">待响应</span>
+      </div>
+      <div class="btnrow pri">
         <button class="btn sm" data-act="swapOk" data-id="${s.id}" type="button">同意</button>
         <button class="btn ghost sm" data-act="swapNo" data-id="${s.id}" type="button">拒绝</button>
       </div></div>`;
@@ -505,45 +595,36 @@ function viewHome() {
   waitOthers.forEach(b => {
     const left = S.members.filter(m => b.confirm[m.id] === 'pending').map(m => m.name).join('、');
     h += `<div class="card">
-      <div class="cr"><div><h3>${esc(b.title)}</h3>
-        <p>你已确认 · 等待 ${esc(left || '—')} 确认</p></div><span class="pill">等待中</span></div></div>`;
+      <div class="cr ico">
+        <span class="tico money">¥</span>
+        <div class="cr-b"><h3>${esc(b.title)}</h3>
+          <p>你已确认 · 等待 ${esc(left || '—')} 确认</p></div>
+        <span class="pill">等待中</span>
+      </div></div>`;
   });
   h += `</div>`;
-
-  h += `<div class="sec">
-    <div class="sec-h"><h2>我的账</h2><span>${esc(S.house.name)}</span></div>
-    <div class="card">
-      <p class="sub" style="margin:0">我的净额</p>
-      <div class="big" style="color:${myNet > 0.005 ? 'var(--primary)' : (myNet < -0.005 ? 'var(--red)' : 'var(--ink)')}">
-        ${myNet > 0.005 ? '+' + fmt(myNet) : (myNet < -0.005 ? '-' + fmt(Math.abs(myNet)) : fmt(0))}
-      </div>
-      <p class="sub">${myNet > 0.005 ? '应收：别人欠你' : (myNet < -0.005 ? '应付：你欠别人' : '已全部结清')} · 本月人均支出 ${fmt(perHead)}</p>
-      <div class="btnrow">
-        <button class="btn sm" data-act="settle" type="button">前往结算中心</button>
-        <button class="btn ghost sm" data-act="newbill" type="button">新建账单</button>
-      </div>
-    </div>
-  </div>`;
 
   h += `<div class="sec">
     <div class="sec-h"><h2>房屋动态</h2><span>${S.members.length} 位成员</span></div>
     <div class="card"><div class="rowlist">`;
   const feed = [];
-  S.tasks.filter(t => t.status === 'done').slice(-2).forEach(t => feed.push(`${mName(t.assigneeId)} 完成「${t.area}」值日 · ${dcn(t.date)}`));
-  needBuy.forEach(i => feed.push(`${i.name} 已低于安全库存，采购负责人：${mName(i.purchaserId)}`));
-  S.bills.forEach(b => { if (b.status === 'settled') feed.push(`${b.title} 已结清 · ${fmt(b.amount)}`); });
-  if (!feed.length) feed.push('暂无动态');
-  h += feed.slice(-4).map(f => `<div class="rowitem"><span class="nm"><span class="av">·</span>${esc(f)}</span></div>`).join('');
+  S.tasks.filter(t => t.status === 'done').slice(-2).forEach(t => feed.push({ i: '✓', c: 'shift', x: `${mName(t.assigneeId)} 完成「${t.area}」值日 · ${dcn(t.date)}` }));
+  needBuy.forEach(i => feed.push({ i: '物', c: 'item', x: `${i.name} 已低于安全库存，采购负责人：${mName(i.purchaserId)}` }));
+  S.bills.forEach(b => { if (b.status === 'settled') feed.push({ i: '¥', c: 'money', x: `${b.title} 已结清 · ${fmt(b.amount)}` }); });
+  if (!feed.length) feed.push({ i: '·', c: '', x: '暂无动态' });
+  h += feed.slice(-4).map(f => `<div class="rowitem"><span class="tico sm-tico ${f.c}">${f.i}</span><span class="nm">${esc(f.x)}</span></div>`).join('');
   h += `</div></div></div>`;
 
   return h;
 }
 
 function card(o) {
+  const ico = o.ico ? `<span class="tico ${o.icoCls || ''}">${o.ico}</span>` : '';
   return `<div class="card ${o.cls || ''} ${o.act ? 'tap' : ''}" ${o.act ? `data-act="${o.act}" data-id="${o.id}"` : ''}>
-    <div class="cr">
-      <div><h3>${esc(o.title)}</h3>${o.sub ? `<p>${o.sub}</p>` : ''}</div>
-      ${o.pill ? `<span class="amt ${o.pillCls === 'o' ? '' : ''}" style="${o.pillCls === 'o' ? 'color:var(--accent)' : ''}">${esc(o.pill)}</span>` : ''}
+    <div class="cr${ico ? ' ico' : ''}">
+      ${ico}
+      <div class="cr-b"><h3>${esc(o.title)}</h3>${o.sub ? `<p>${o.sub}</p>` : ''}</div>
+      ${o.pill ? `<span class="amt" style="${o.pillCls === 'o' ? 'color:var(--accent)' : ''}">${esc(o.pill)}</span>` : ''}
     </div></div>`;
 }
 
@@ -582,7 +663,7 @@ function viewBills() {
       </div>`;
     });
   });
-  if (!any) h += `<div class="empty"><b>还没有账单</b>点下面的按钮记下第一笔</div>`;
+  if (!any) h += `<div class="empty"><div class="em-ico">＋</div><b>还没有账单</b>点下面的按钮记下第一笔</div>`;
   h += `</div><button class="btn wide" data-act="newbill" type="button">＋ 新建账单</button>`;
   return h;
 }
@@ -830,7 +911,7 @@ function sheetNewBill() {
     <div class="field"><label for="nbNote">备注（可选）</label><input id="nbNote" placeholder="例如：抄表 1842 → 2214 kWh" maxlength="60"></div>
     <div class="preview" id="nbPreview"></div>
     <div class="btnrow">
-      <button class="btn ghost" data-act="close" type="button">取消</button>
+      <button class="btn link" data-act="close" type="button">取消</button>
       <button class="btn" data-act="createBill" type="button">提交并推送确认</button>
     </div>
   `, 'bills');
@@ -889,7 +970,7 @@ function sheetBill(id) {
     <div class="divide"></div>
     <p class="sub">我的份额：<strong>${fmt(mine)}</strong>${me === b.payerId ? '（你是垫付人，应收 ' + fmt(b.amount - mine) + '）' : ''}</p>
     ${actions}
-    <div class="btnrow"><button class="btn ghost" data-act="close" type="button">关闭</button></div>
+    <div class="btnrow"><button class="btn link" data-act="close" type="button">关闭</button></div>
   `, 'bills');
 }
 
@@ -911,7 +992,7 @@ function sheetCheckin(id) {
       </div>
     </div>
     <div class="btnrow">
-      <button class="btn ghost" data-act="close" type="button">取消</button>
+      <button class="btn link" data-act="close" type="button">取消</button>
       <button class="btn" data-act="doCheckin" data-id="${t.id}" type="button">提交打卡</button>
     </div>
   `, 'shift');
@@ -928,7 +1009,7 @@ function sheetSwap(id) {
     <div class="field"><label for="swTo">换给谁</label><select id="swTo">${opts}</select></div>
     <div class="field"><label for="swReason">原因（会显示给对方）</label><input id="swReason" value="当天出差，无法完成" maxlength="40"></div>
     <div class="btnrow">
-      <button class="btn ghost" data-act="close" type="button">取消</button>
+      <button class="btn link" data-act="close" type="button">取消</button>
       <button class="btn" data-act="doSwap" data-id="${t.id}" type="button">发送换班申请</button>
     </div>
   `, 'shift');
@@ -948,7 +1029,7 @@ function sheetBuy(id) {
       <div class="rowitem"><span class="nm">${esc(i.name)} 库存回补</span><span class="v">${i.safety * 3} ${esc(i.unit)}</span></div>
     </div>
     <div class="btnrow">
-      <button class="btn ghost" data-act="close" type="button">取消</button>
+      <button class="btn link" data-act="close" type="button">取消</button>
       <button class="btn" data-act="doBuy" data-id="${i.id}" type="button">确认已购买</button>
     </div>
   `, 'items');
