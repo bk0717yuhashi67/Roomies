@@ -94,6 +94,9 @@ const q = (doc, s) => doc.querySelector(s);
 const viewOf = doc => (q(doc, '#view') || { innerHTML: '' }).innerHTML;
 const stored = dom => JSON.parse(dom.window.localStorage.getItem(KEY) || '{}');
 const click = (doc, sel) => { const el = q(doc, sel); if (!el) throw new Error('找不到元素: ' + sel); el.click(); };
+/* 点不到就记一条 FAIL，而不是让整个脚本崩掉 */
+const tryClick = (doc, sel) => { const el = q(doc, sel); if (!el) { check('元素存在 ' + sel, false); return false; } el.click(); return true; };
+const setVal = (doc, sel, v) => { const el = q(doc, sel); if (!el) { check('表单字段存在 ' + sel, false); return false; } el.value = v; return true; };
 
 /* 切换当前身份：客户端把身份切换移进了账号菜单，这里走真实交互路径 */
 async function switchTo(doc, id) {
@@ -349,6 +352,138 @@ async function switchTo(doc, id) {
     check('ESC 可关闭弹层', !q(doc, '#modalRoot .sheet'));
     check('关闭后恢复背景滚动', doc.body.style.overflow === '', 'overflow=' + (doc.body.style.overflow || '(空)'));
     check('场景 F 无运行时错误', errors.length === 0, errors.join(' | '));
+  }
+
+  /* ---------- G. 编辑能力：值日 / 物品 / 公约 / 提案 ---------- */
+  console.log('\n===== G · 编辑能力（新增 / 查看 / 编辑 / 删除） =====');
+  {
+    const { dom, errors } = makeDom(null);
+    const doc = dom.window.document;
+    await wait(170);
+
+    /* 一个两周后的日期，确保落在「本周」之外 */
+    const dt = new Date(Date.now() + 14 * 86400000);
+    const fds = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+
+    /* --- 值日：新增 --- */
+    click(doc, '[data-act="tab"][data-id="shift"]'); await wait(70);
+    check('值日页有「新增排班」入口', !!q(doc, '[data-act="newTask"]'));
+    tryClick(doc, '[data-act="newTask"]'); await wait(80);
+    check('新增排班弹层已打开', !!q(doc, '#modalRoot .sheet') && !!q(doc, '#f_date'));
+    setVal(doc, '#f_date', fds);
+    setVal(doc, '#f_area', '卫生间');
+    setVal(doc, '#f_assignee', 'm2');
+    setVal(doc, '#f_checklist', '刷马桶、拖地');
+    tryClick(doc, '[data-act="taskNew"]'); await wait(110);
+    let st = stored(dom);
+    let nt = (st.tasks || []).find(x => x.date === fds);
+    check('新增排班写入数据', !!nt, nt ? nt.area + ' / ' + nt.assigneeId : '未找到');
+    check('检查清单按「、」拆分', !!nt && nt.checklist.length === 2, nt ? nt.checklist.map(c => c.t).join('|') : '-');
+    check('提交后弹层关闭', !q(doc, '#modalRoot .sheet'));
+    check('本周之外的排班出现在「之后的排班」区块', /之后的排班/.test(viewOf(doc)));
+
+    /* --- 值日：编辑 --- */
+    tryClick(doc, '[data-act="editTask"][data-id="' + nt.id + '"]'); await wait(80);
+    check('编辑排班弹层已打开', !!q(doc, '#modalRoot .sheet') && !!q(doc, '#f_assignee'));
+    setVal(doc, '#f_assignee', 'm3');
+    tryClick(doc, '[data-act="taskSave"]'); await wait(110);
+    st = stored(dom); nt = (st.tasks || []).find(x => x.date === fds);
+    check('编辑排班改了负责人', !!nt && nt.assigneeId === 'm3', nt ? nt.assigneeId : '-');
+    check('编辑排班留下历史记录', !!nt && (nt.history || []).some(h => /修改排班/.test(h.what || '')));
+
+    /* --- 值日：日期冲突被拒 --- */
+    const other = (stored(dom).tasks || []).find(x => x.date !== fds);
+    tryClick(doc, '[data-act="editTask"][data-id="' + nt.id + '"]'); await wait(80);
+    setVal(doc, '#f_date', other.date);
+    tryClick(doc, '[data-act="taskSave"]'); await wait(110);
+    check('改成已被占用的日期会被拒绝', !!q(doc, '#modalRoot .sheet'), '弹层应保持打开并给出原因');
+    click(doc, '#modalRoot .mask'); await wait(70);
+
+    /* --- 值日：删除 --- */
+    tryClick(doc, '[data-act="editTask"][data-id="' + nt.id + '"]'); await wait(80);
+    tryClick(doc, '[data-act="taskDel"]'); await wait(80);
+    check('删除排班需要二次确认', /删除这条排班/.test((q(doc, '#modalRoot .sheet') || {}).textContent || ''));
+    tryClick(doc, '[data-act="taskDelDo"]'); await wait(110);
+    check('删除排班生效', !(stored(dom).tasks || []).some(x => x.date === fds));
+
+    /* --- 物品：新增 --- */
+    click(doc, '[data-act="tab"][data-id="items"]'); await wait(70);
+    check('物品页有「添加物品」入口', !!q(doc, '[data-act="newItem"]'));
+    tryClick(doc, '[data-act="newItem"]'); await wait(80);
+    setVal(doc, '#f_name', '洗洁精');
+    setVal(doc, '#f_unit', '瓶');
+    setVal(doc, '#f_stock', '3');
+    setVal(doc, '#f_safety', '2');
+    setVal(doc, '#f_restockQty', '4');
+    tryClick(doc, '[data-act="itemNew"]'); await wait(110);
+    st = stored(dom);
+    let it = (st.items || []).find(x => x.name === '洗洁精');
+    check('添加物品写入数据', !!it, it ? it.stock + ' ' + it.unit : '未找到');
+    check('库存按数字保存（不是字符串）', !!it && it.stock === 3 && it.safety === 2, it ? it.stock + '/' + it.safety : '-');
+
+    tryClick(doc, '[data-act="newItem"]'); await wait(80);
+    setVal(doc, '#f_name', '洗洁精');
+    tryClick(doc, '[data-act="itemNew"]'); await wait(110);
+    check('重名物品会被拒绝', !!q(doc, '#modalRoot .sheet'));
+    click(doc, '#modalRoot .mask'); await wait(70);
+
+    /* --- 物品：编辑与删除 --- */
+    tryClick(doc, '[data-act="editItem"][data-id="' + it.id + '"]'); await wait(80);
+    setVal(doc, '#f_stock', '9');
+    tryClick(doc, '[data-act="itemSave"]'); await wait(110);
+    it = (stored(dom).items || []).find(x => x.name === '洗洁精');
+    check('编辑物品改了库存', !!it && it.stock === 9, it ? String(it.stock) : '-');
+
+    tryClick(doc, '[data-act="editItem"][data-id="' + it.id + '"]'); await wait(80);
+    tryClick(doc, '[data-act="itemDel"]'); await wait(80);
+    tryClick(doc, '[data-act="itemDelDo"]'); await wait(110);
+    check('删除物品生效', !(stored(dom).items || []).some(x => x.name === '洗洁精'));
+
+    /* --- 公约：新增条款 --- */
+    click(doc, '[data-act="tab"][data-id="pact"]'); await wait(70);
+    check('公约页有「新增条款」入口', !!q(doc, '[data-act="newPact"]'));
+    const vBefore = stored(dom).pactVersion;
+    tryClick(doc, '[data-act="newPact"]'); await wait(80);
+    setVal(doc, '#f_text', '洗衣机用完要关水龙头');
+    setVal(doc, '#f_category', '卫生与清洁');
+    tryClick(doc, '[data-act="pactNew"]'); await wait(110);
+    st = stored(dom);
+    check('新增公约条款写入数据', (st.pacts || []).some(p => p.text === '洗衣机用完要关水龙头'));
+    check('新增条款后公约版本自增', st.pactVersion !== vBefore, vBefore + ' → ' + st.pactVersion);
+
+    /* --- 公约：查看与编辑 --- */
+    const np = (stored(dom).pacts || []).find(p => p.text === '洗衣机用完要关水龙头');
+    tryClick(doc, '[data-act="editPact"][data-id="' + np.id + '"]'); await wait(80);
+    check('条款弹层能回填原文（可查看）', !!q(doc, '#f_text') && q(doc, '#f_text').value === '洗衣机用完要关水龙头');
+    setVal(doc, '#f_text', '洗衣机用完要关水龙头并拔掉插头');
+    tryClick(doc, '[data-act="pactSave"]'); await wait(110);
+    check('编辑条款生效', (stored(dom).pacts || []).some(p => p.text === '洗衣机用完要关水龙头并拔掉插头'));
+
+    /* --- 提案：发起 --- */
+    check('公约页有「发起提案」入口', !!q(doc, '[data-act="newVote"]'));
+    tryClick(doc, '[data-act="newVote"]'); await wait(80);
+    setVal(doc, '#f_text', '每月一号统一收公共基金');
+    setVal(doc, '#f_threshold', '2');
+    setVal(doc, '#f_days', '3');
+    tryClick(doc, '[data-act="voteNew"]'); await wait(110);
+    st = stored(dom);
+    let nv = (st.votes || []).find(v => v.text === '每月一号统一收公共基金');
+    check('发起提案写入数据', !!nv);
+    check('提案带上截止时间与阈值', !!nv && nv.threshold === 2 && /3 天后截止/.test(nv.deadline), nv ? nv.deadline : '-');
+
+    /* --- 提案：编辑与删除 --- */
+    tryClick(doc, '[data-act="editVote"][data-id="' + nv.id + '"]'); await wait(80);
+    setVal(doc, '#f_threshold', '3');
+    tryClick(doc, '[data-act="voteSave"]'); await wait(110);
+    nv = (stored(dom).votes || []).find(v => v.text === '每月一号统一收公共基金');
+    check('编辑提案改了阈值', !!nv && nv.threshold === 3, nv ? String(nv.threshold) : '-');
+
+    tryClick(doc, '[data-act="editVote"][data-id="' + nv.id + '"]'); await wait(80);
+    tryClick(doc, '[data-act="voteDel"]'); await wait(80);
+    tryClick(doc, '[data-act="voteDelDo"]'); await wait(110);
+    check('删除提案生效', !(stored(dom).votes || []).some(v => v.text === '每月一号统一收公共基金'));
+
+    check('场景 G 无运行时错误', errors.length === 0, errors.join(' | '));
   }
 
   /* ---------- 汇总 ---------- */

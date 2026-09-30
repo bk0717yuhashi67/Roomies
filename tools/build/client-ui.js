@@ -666,8 +666,33 @@ if (btnAccount) btnAccount.addEventListener('click', sheetAccount);
 /* ---- 启动 ---- */
 initTheme();
 const stars = $('#stars');
-/* 28 颗足够铺满夜空 —— 原为 58 颗，每颗都是一个独立合成层，是掉帧的主要来源之一 */
+/* 28 颗足够铺满夜空 —— 每颗都是一个独立合成层，数量直接换算力开销 */
 if (stars) stars.innerHTML = makeStars(28);
+
+/* 流星：CSS 动画本身不带随机，所以在每轮动画开始时（animationiteration）重掷参数。
+   方向固定向右下；角度必须按视口实际比例换算 ——
+   vw 与 vh 对应的像素不同，直接用角度常量会让尾巴和轨迹对不上。 */
+const meteor = document.querySelector('.meteor');
+if (meteor) {
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const reroll = () => {
+    const w = window.innerWidth || 390, h = window.innerHeight || 844;
+    /* 先定视觉角度（向右下 35°–52°），再反算垂直位移。
+       直接给 vw / vh 组合会偏陡 —— 窄屏上 1vh 的像素远多于 1vw，
+       实测能到 60°，看起来几乎是竖直下落。 */
+    const deg = rnd(35, 52);
+    const dxi = rnd(52, 82);
+    const dxPx = dxi * w / 100;
+    const dyi = (Math.tan(deg * Math.PI / 180) * dxPx) / h * 100;
+    meteor.style.setProperty('--mx', rnd(-20, 42).toFixed(1) + 'vw');
+    meteor.style.setProperty('--my', rnd(-4, 32).toFixed(1) + 'vh');
+    meteor.style.setProperty('--mdx', dxi.toFixed(1) + 'vw');
+    meteor.style.setProperty('--mdy', Math.max(8, dyi).toFixed(1) + 'vh');
+    meteor.style.setProperty('--mrot', deg.toFixed(1) + 'deg');
+  };
+  reroll();
+  meteor.addEventListener('animationiteration', reroll);
+}
 const logoAuth = $('#logoAuth');
 if (logoAuth) logoAuth.innerHTML = logoSVG();
 const logoTop = $('#logoTop');

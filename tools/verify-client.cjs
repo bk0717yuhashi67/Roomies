@@ -279,7 +279,9 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     check('backdrop-filter 用量受控（< 16 处）', bd < 16, bd + ' 处');
     const sm = html.match(/makeStars\((\d+)\)/);
     check('星星数量受控（<= 32 颗）', !!sm && Number(sm[1]) <= 32, sm ? sm[1] + ' 颗' : '未找到');
-    check('存在视图切换过渡动画', /@keyframes viewIn/.test(html) && /function viewIn\(\)/.test(html));
+    check('存在视图切换过渡动画（区块错峰）', /@keyframes secIn/.test(html) && /function viewIn\(\)/.test(html));
+    check('流星向右下移动（垂直位移由角度反算，非固定水平）', /--mdy/.test(html) && /Math\.tan\(deg/.test(html));
+    check('弹层有退出动画与降级保护', /dataset\.closing/.test(html) && /typeof sheet\.animate !== 'function'/.test(html));
     check('新账号初始化会清空公约', /s\.pacts = \[\]/.test(html));
   }
 

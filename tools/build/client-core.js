@@ -888,6 +888,34 @@ function viewSettle() {
 }
 
 /* ---------- 值日 ---------- */
+/* 值日卡片：本周表与「之后的排班」共用同一套渲染 */
+function taskCardHtml(t, today) {
+  const me = S.me;
+  const isToday = t.date === today;
+  const isMe = t.assigneeId === me;
+  const overdueDay = t.status === 'pending' && t.date < today;
+  const st = t.status === 'done' ? '<span class="pill g">已完成</span>'
+    : (t.status === 'skipped' ? '<span class="pill r">已顺延</span>'
+      : (overdueDay ? '<span class="pill r">已逾期</span>'
+        : (isToday ? '<span class="pill o">今天 22:00 前</span>' : '<span class="pill">待办</span>')));
+  const canCheck = isMe && t.status === 'pending' && t.date <= today && daysBetween(t.date, today) <= GRACE_DAYS;
+  let h = `<div class="card ${isToday && isMe ? 'tint' : ''}">
+    <div class="cr">
+      <span class="tico shift">✓</span>
+      <div class="cr-b"><h3>${esc(dcn(t.date))} ${esc(WD[new Date(t.date.replace(/-/g, '/')).getDay()])} · ${esc(t.area)}</h3>
+        <p>负责人：${esc(mName(t.assigneeId))}${t.proofAt ? ' · ' + esc(t.proofAt) + ' 打卡' + (t.isLateCheckin ? '（补打）' : '') : ''}${isMe ? ' · 是你' : ''}</p></div>
+      ${st}
+    </div>
+    <div class="btnrow${canCheck ? ' pri' : ''}">`;
+  if (canCheck) {
+    h += `<button class="btn sm" data-act="checkin" data-id="${t.id}" type="button">拍照打卡</button>
+      <button class="btn ghost sm" data-act="swap" data-id="${t.id}" type="button">申请换班</button>`;
+  }
+  h += `<button class="btn link sm" data-act="editTask" data-id="${t.id}" type="button">编辑</button>`;
+  h += `</div></div>`;
+  return h;
+}
+
 function viewShift() {
   const me = S.me;
   const today = todayStr();
@@ -897,42 +925,35 @@ function viewShift() {
   const doneN = weekTasks.filter(t => t.status === 'done').length;
 
   let h = `<div class="sec">
-    <div class="sec-h"><h2>本周值日表</h2><span>共 ${weekTasks.length} 项 · 已完成 ${doneN} 项</span></div>`;
+    <div class="sec-h"><h2>本周值日表</h2>
+      <div class="sec-r"><span>共 ${weekTasks.length} 项 · 已完成 ${doneN} 项</span>
+        <button class="mini-add" data-act="newTask" type="button" aria-label="新增排班" title="手动新增一条排班">＋</button></div>
+    </div>`;
 
   week.forEach(ds => {
     const t = S.tasks.find(x => x.date === ds);
-    if (!t) return;
-    const isToday = ds === today;
-    const isMe = t.assigneeId === me;
-    const overdueDay = t.status === 'pending' && ds < today;
-    const st = t.status === 'done' ? '<span class="pill g">已完成</span>'
-      : (t.status === 'skipped' ? '<span class="pill r">已顺延</span>'
-        : (overdueDay ? '<span class="pill r">已逾期</span>'
-          : (isToday ? '<span class="pill o">今天 22:00 前</span>' : '<span class="pill">待办</span>')));
-    const canCheck = isMe && t.status === 'pending' && ds <= today && daysBetween(ds, today) <= GRACE_DAYS;
-    h += `<div class="card ${isToday && isMe ? 'tint' : ''}">
-      <div class="cr">
-        <span class="tico shift">✓</span>
-        <div class="cr-b"><h3>${esc(dcn(ds))} ${esc(WD[new Date(ds.replace(/-/g, '/')).getDay()])} · ${esc(t.area)}</h3>
-          <p>负责人：${esc(mName(t.assigneeId))}${t.proofAt ? ' · ' + esc(t.proofAt) + ' 打卡' + (t.isLateCheckin ? '（补打）' : '') : ''}${isMe ? ' · 是你' : ''}</p></div>
-        ${st}
-      </div>`;
-    if (canCheck) {
-      h += `<div class="btnrow pri">
-        <button class="btn sm" data-act="checkin" data-id="${t.id}" type="button">拍照打卡</button>
-        <button class="btn ghost sm" data-act="swap" data-id="${t.id}" type="button">申请换班</button>
-      </div>`;
-    }
-    h += `</div>`;
+    if (t) h += taskCardHtml(t, today);
   });
   if (!weekTasks.length) {
     h += `<div class="card"><div class="cr">
       <span class="tico shift">✓</span>
       <div class="cr-b"><h3>本周还没有值日安排</h3>
-        <p>${S.members.length < 2 ? '邀请室友加入房屋后，会自动生成本周值日表' : '当前没有需要排班的日期'}</p></div>
+        <p>${S.members.length < 2 ? '邀请室友加入房屋后，会自动生成本周值日表' : '点右上角的 ＋ 手动排一条'}</p></div>
     </div></div>`;
   }
   h += `</div>`;
+
+  /* 本周之后的排班 —— 手动排了下周的任务必须能看到，否则会出现「加了却找不到」 */
+  const future = S.tasks.filter(t => t.date > week[6]);
+  if (future.length) {
+    h += `<div class="sec">
+      <div class="sec-h"><h2>之后的排班</h2>
+        <div class="sec-r"><span>共 ${future.length} 项</span>
+          <button class="mini-add" data-act="newTask" type="button" aria-label="新增排班" title="手动新增一条排班">＋</button></div>
+      </div>`;
+    future.forEach(t => { h += taskCardHtml(t, today); });
+    h += `</div>`;
+  }
 
   /* 力账：贡献分 */
   const myScore = scoreOf(me);
@@ -991,9 +1012,13 @@ function viewItems() {
     .reduce((s, b) => s + b.amount, 0);
 
   let h = `<div class="sec">
-    <div class="sec-h"><h2>公共物品</h2><span>本月公共采购 ${fmt(monthSpend)}</span></div>`;
+    <div class="sec-h"><h2>公共物品</h2>
+      <div class="sec-r"><span>本月公共采购 ${fmt(monthSpend)}</span>
+        <button class="mini-add" data-act="newItem" type="button" aria-label="添加物品" title="登记一件公共物品">＋</button></div>
+    </div>`;
 
-  if (!S.items.length) h += `<div class="empty"><div class="em-ico">□</div><b>还没有登记物品</b>把纸巾、洗洁精这类公用消耗品记进来</div>`;
+  if (!S.items.length) h += `<div class="empty"><div class="em-ico">□</div><b>还没有登记物品</b>把纸巾、洗洁精这类公用消耗品记进来
+    <div class="btnrow" style="max-width:200px;margin:14px auto 0"><button class="btn sm" data-act="newItem" type="button">添加第一件</button></div></div>`;
 
   cats.forEach(c => {
     const list = S.items.filter(i => i.category === c);
@@ -1020,14 +1045,15 @@ function viewItems() {
         h += `<p class="sub">${task.status === 'claimed' ? esc(mName(task.assigneeId)) + ' 已认领采购' : '待认领'}${
           me !== task.assigneeId && task.status === 'claimed' ? ' · <span class="linky" data-act="nudge" data-id="' + task.id + '">催一下</span>' : ''}</p>`;
       }
+      h += `<div class="btnrow${(i.category === '消耗品' && (!task || task.status === 'open')) ? ' pri' : ''}">`;
       if (i.category === '消耗品') {
-        h += `<div class="btnrow">`;
         h += `<button class="btn ghost sm" data-act="empty" data-id="${i.id}" type="button">快没了</button>`;
         if (!task || task.status === 'open') {
           h += `<button class="btn sm" data-act="buy" data-id="${i.id}" type="button">我去买</button>`;
         }
-        h += `</div>`;
       }
+      h += `<button class="btn link sm" data-act="editItem" data-id="${i.id}" type="button">编辑</button>`;
+      h += `</div>`;
       h += `</div>`;
     });
   });
@@ -1045,16 +1071,24 @@ function viewPact() {
   if (!S.pacts.length) {
     /* 空房屋：不显示"公约已生效"这类并不存在的状态 */
     h += `<div class="sec">
-      <div class="sec-h"><h2>室友公约</h2><span>尚未建立</span></div>
+      <div class="sec-h"><h2>室友公约</h2>
+        <div class="sec-r"><span>尚未建立</span>
+          <button class="mini-add" data-act="newPact" type="button" aria-label="新增条款" title="新增一条公约条款">＋</button></div>
+      </div>
       <div class="card"><div class="cr">
         <span class="tico pact">约</span>
         <div class="cr-b"><h3>还没有公约</h3>
         <p>${S.members.length < 2 ? '邀请室友加入后，在这里一起定下房屋规则' : '把最容易起争执的事写成条款，绑定到系统规则上'}</p></div>
-      </div></div>
+      </div>
+        <div class="btnrow" style="max-width:200px"><button class="btn sm" data-act="newPact" type="button">新增第一条</button></div>
+      </div>
     </div>`;
   } else {
     h += `<div class="sec">
-      <div class="sec-h"><h2>室友公约</h2><span>当前生效 ${esc(S.pactVersion)}</span></div>
+      <div class="sec-h"><h2>室友公约</h2>
+        <div class="sec-r"><span>当前生效 ${esc(S.pactVersion)}</span>
+          <button class="mini-add" data-act="newPact" type="button" aria-label="新增条款" title="新增一条公约条款">＋</button></div>
+      </div>
       <div class="card tint">
         <div class="cr"><div><h3>公约 ${esc(S.pactVersion)}</h3><p>全体成员已签署（${S.members.length}/${S.members.length}）</p></div><span class="pill g">生效中</span></div>
       </div>`;
@@ -1064,30 +1098,35 @@ function viewPact() {
         h += `<div class="card">
           <div class="cr"><div><h3>${esc(p.text)}</h3><p>${esc(p.binding)}</p></div>
           ${p.enforceable ? '<span class="pill g">已绑定</span>' : '<span class="pill">仅靠自觉</span>'}</div>
+          <div class="btnrow"><button class="btn link sm" data-act="editPact" data-id="${p.id}" type="button">查看与编辑</button></div>
         </div>`;
       });
     });
     h += `</div>`;
   }
 
-  /* 提案与投票：没有提案就不占版面 */
-  if (S.votes.length) {
-    h += `<div class="sec"><div class="sec-h"><h2>提案与投票</h2></div>`;
-    S.votes.forEach(v => {
-      const ok = v.support.indexOf(me) >= 0, no = v.against.indexOf(me) >= 0;
-      const pass = v.support.length >= v.threshold;
-      h += `<div class="card">
-        <div class="cr"><div><h3>${esc(v.text)}</h3><p>${esc(v.deadline)} · 通过阈值 ${v.threshold} 票</p></div>
-        <span class="pill ${pass ? 'g' : 'o'}">${v.support.length} 支持 / ${v.against.length} 反对</span></div>
-        <div class="btnrow pri">
-          <button class="btn ${ok ? '' : 'ghost'} sm" data-act="vote" data-id="${v.id}" data-v="1" type="button">${ok ? '已支持' : '支持'}</button>
-          <button class="btn ${no ? 'danger' : 'ghost'} sm" data-act="vote" data-id="${v.id}" data-v="0" type="button">${no ? '已反对' : '反对'}</button>
-        </div>
-        ${pass ? '<p class="sub">已达到通过阈值，将在截止后自动生效</p>' : ''}
-      </div>`;
-    });
-    h += `</div>`;
+  /* 提案与投票：区块常显 —— 否则没有提案时就找不到「发起」入口 */
+  h += `<div class="sec"><div class="sec-h"><h2>提案与投票</h2>
+    <div class="sec-r">${S.votes.length ? '<span>' + S.votes.length + ' 个进行中</span>' : ''}
+      <button class="mini-add" data-act="newVote" type="button" aria-label="发起提案" title="发起一个提案让大家投票">＋</button></div></div>`;
+  if (!S.votes.length) {
+    h += `<div class="empty"><div class="em-ico">◇</div><b>还没有提案</b>拿不定主意的事，提出来让大家投个票</div>`;
   }
+  S.votes.forEach(v => {
+    const ok = v.support.indexOf(me) >= 0, no = v.against.indexOf(me) >= 0;
+    const pass = v.support.length >= v.threshold;
+    h += `<div class="card">
+      <div class="cr"><div><h3>${esc(v.text)}</h3><p>${esc(v.deadline)} · 通过阈值 ${v.threshold} 票</p></div>
+      <span class="pill ${pass ? 'g' : 'o'}">${v.support.length} 支持 / ${v.against.length} 反对</span></div>
+      <div class="btnrow pri">
+        <button class="btn ${ok ? '' : 'ghost'} sm" data-act="vote" data-id="${v.id}" data-v="1" type="button">${ok ? '已支持' : '支持'}</button>
+        <button class="btn ${no ? 'danger' : 'ghost'} sm" data-act="vote" data-id="${v.id}" data-v="0" type="button">${no ? '已反对' : '反对'}</button>
+        <button class="btn link sm" data-act="editVote" data-id="${v.id}" type="button">编辑</button>
+      </div>
+      ${pass ? '<p class="sub">已达到通过阈值，将在截止后自动生效</p>' : ''}
+    </div>`;
+  });
+  h += `</div>`;
 
   /* 公约版本：只展示真实存在的版本，不再硬编码示例历史 */
   if (S.pacts.length) {
@@ -1131,6 +1170,7 @@ function openSheet(html, forTab) {
   r.dataset.for = forTab || TAB;
   r.innerHTML = `<div class="mask"><div class="sheet" tabindex="-1" role="dialog" aria-modal="true">${html}</div></div>`;
   document.body.style.overflow = 'hidden';
+  document.body.classList.add('sheet-open');
   const sheet = r.querySelector('.sheet');
   if (sheet) setTimeout(() => { try { sheet.focus(); } catch (e) { /* ignore */ } }, 20);
 }
@@ -1138,11 +1178,36 @@ function openSheet(html, forTab) {
 function closeSheet() {
   const r = $('#modalRoot');
   if (!r.innerHTML) return;
-  r.innerHTML = '';
-  r.removeAttribute('data-for');
-  document.body.style.overflow = '';
-  if (LAST_FOCUS && typeof LAST_FOCUS.focus === 'function') { try { LAST_FOCUS.focus(); } catch (e) { /* ignore */ } }
-  LAST_FOCUS = null;
+  if (r.dataset.closing === '1') return;          /* 连点关闭时不重复触发 */
+
+  const finish = () => {
+    r.innerHTML = '';
+    r.removeAttribute('data-for');
+    r.removeAttribute('data-closing');
+    document.body.style.overflow = '';
+    document.body.classList.remove('sheet-open');
+    if (LAST_FOCUS && typeof LAST_FOCUS.focus === 'function') { try { LAST_FOCUS.focus(); } catch (e) { /* ignore */ } }
+    LAST_FOCUS = null;
+  };
+
+  const mask = r.querySelector('.mask');
+  const sheet = r.querySelector('.sheet');
+  /* 退出动画比进入更快（进场可慢，退场必须干脆）。
+     不支持 Web Animations 的环境（jsdom、老浏览器）直接关闭，避免弹层卡住。 */
+  if (!mask || !sheet || typeof sheet.animate !== 'function') { finish(); return; }
+
+  r.dataset.closing = '1';
+  const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
+  let done = false;
+  const once = () => { if (done) return; done = true; finish(); };
+  try {
+    mask.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 170, easing: EASE, fill: 'forwards' });
+    sheet.animate(
+      [{ transform: 'none', opacity: 1 }, { transform: 'translateY(18px)', opacity: 0 }],
+      { duration: 190, easing: EASE, fill: 'forwards' }
+    ).finished.then(once).catch(once);
+  } catch (e) { once(); return; }
+  setTimeout(once, 320);   /* 兜底：动画结束事件丢失时也要关掉 */
 }
 
 function toast(msg) {
@@ -1351,6 +1416,203 @@ function sheetBuy(id) {
   `, 'items');
 }
 
+/* ============================================================
+   9 · 通用编辑弹层（值日 / 物品 / 公约 / 提案 共用一套表单）
+   ------------------------------------------------------------
+   字段用数据描述，四个模块不必各写一遍结构，
+   这样「编辑」入口的交互与视觉才完全一致。
+   ============================================================ */
+const CAT_PACT = ['费用与分摊', '卫生与清洁', '公共物品', '作息与噪音', '访客与安全', '其他'];
+
+function fldHtml(f) {
+  const id = 'f_' + f.k;
+  const hint = f.hint ? `<p class="f-hint">${esc(f.hint)}</p>` : '';
+  if (f.type === 'select') {
+    return `<div class="field"><label for="${id}">${esc(f.label)}</label>
+      <select id="${id}">${(f.options || []).map(x =>
+      `<option value="${esc(x.v)}"${String(x.v) === String(f.value == null ? '' : f.value) ? ' selected' : ''}>${esc(x.t)}</option>`).join('')}</select>${hint}</div>`;
+  }
+  if (f.type === 'textarea') {
+    return `<div class="field"><label for="${id}">${esc(f.label)}</label>
+      <textarea id="${id}" rows="${f.rows || 2}" placeholder="${esc(f.ph || '')}">${esc(f.value == null ? '' : f.value)}</textarea>${hint}</div>`;
+  }
+  const attr = (f.min !== undefined ? ` min="${f.min}"` : '') + (f.max !== undefined ? ` max="${f.max}"` : '');
+  return `<div class="field"><label for="${id}">${esc(f.label)}</label>
+    <input id="${id}" type="${f.type || 'text'}"${attr} value="${esc(f.value == null ? '' : f.value)}" placeholder="${esc(f.ph || '')}">${hint}</div>`;
+}
+
+/* 读取表单值：keys 用空格分隔，省去每个模块各写一份取值代码 */
+function readVals(keys) {
+  const o = {};
+  String(keys).split(/\s+/).forEach(k => {
+    if (!k) return;
+    const el = $('#f_' + k);
+    o[k] = el ? String(el.value).trim() : '';
+  });
+  return o;
+}
+
+function formSheet(o) {
+  openSheet(`
+    <h3>${esc(o.title)}</h3>
+    ${o.sub ? `<p class="sh-sub">${esc(o.sub)}</p>` : ''}
+    ${(o.fields || []).map(fldHtml).join('')}
+    <div class="btnrow" style="margin-top:20px">
+      <button class="btn link" data-act="close" type="button">取消</button>
+      <button class="btn" data-act="${o.act}" data-id="${o.id || ''}" type="button">${esc(o.okText || '保存')}</button>
+    </div>
+    ${o.footer || ''}
+  `, o.tab || TAB);
+}
+
+/* 删除按钮：放在底部，视觉权重明显弱于「保存」 */
+function delFooter(act, id, text) {
+  return `<div class="btnrow" style="margin-top:10px">
+    <button class="btn danger wide sm" data-act="${act}" data-id="${id}" type="button">${esc(text)}</button>
+  </div>`;
+}
+
+/* 检查清单文本 ↔ 数组（同名的项保留原有完成状态） */
+function parseList(str, area, prev) {
+  const s = String(str || '').trim();
+  if (!s) {
+    if (prev && prev.length) return prev.map(c => ({ t: c.t, done: !!c.done }));
+    const def = AREAS.find(a => a.name === area);
+    return (def ? def.list : ['完成公共区域清洁']).map(x => ({ t: x, done: false }));
+  }
+  const done = {};
+  (prev || []).forEach(c => { done[c.t] = !!c.done; });
+  return s.split(/[、,，;；|]+/).map(x => x.trim()).filter(Boolean).map(x => ({ t: x, done: !!done[x] }));
+}
+
+/* 数值字段的解析与范围校验（避免把空字符串变成 NaN 写进数据） */
+function num(v, name, min, max) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) throw BizError(name + '需要填数字');
+  if (min !== undefined && n < min) throw BizError(name + '不能小于 ' + min);
+  if (max !== undefined && n > max) throw BizError(name + '不能大于 ' + max);
+  return n;
+}
+
+/* ---------- 值日 ---------- */
+function taskForm(t) {
+  const isNew = !t;
+  const d = t || { date: todayStr(), area: AREAS[0].name, assigneeId: S.me, checklist: [] };
+  const areaOpts = AREAS.map(a => ({ v: a.name, t: a.name }));
+  if (!areaOpts.some(x => x.v === d.area)) areaOpts.push({ v: d.area, t: d.area });
+  formSheet({
+    title: isNew ? '新增排班' : '编辑排班',
+    sub: isNew ? '手动插入一条值日安排' : dcn(d.date) + ' · ' + d.area,
+    tab: 'shift',
+    fields: [
+      { k: 'date', label: '日期', type: 'date', value: d.date },
+      { k: 'area', label: '区域', type: 'select', value: d.area, options: areaOpts },
+      { k: 'assignee', label: '负责人', type: 'select', value: d.assigneeId, options: S.members.map(m => ({ v: m.id, t: m.name })) },
+      {
+        k: 'checklist', label: '检查清单', type: 'text', value: (d.checklist || []).map(c => c.t).join('、'),
+        ph: '用「、」分隔', hint: '留空则使用该区域的默认清单'
+      }
+    ],
+    okText: isNew ? '创建' : '保存修改',
+    act: isNew ? 'taskNew' : 'taskSave',
+    id: isNew ? '' : d.id,
+    footer: isNew ? '' : delFooter('taskDel', d.id, '删除这条排班')
+  });
+}
+
+/* ---------- 物品 ---------- */
+function itemForm(i) {
+  const isNew = !i;
+  const d = i || { name: '', category: '消耗品', unit: '件', stock: 0, safety: 1, restockQty: 1, purchaserId: '', location: '' };
+  const memberOpts = [{ v: '', t: '暂不指定' }].concat(S.members.map(m => ({ v: m.id, t: m.name })));
+  formSheet({
+    title: isNew ? '登记公共物品' : '编辑物品',
+    sub: isNew ? '公用消耗品或共用的电器设备' : d.name,
+    tab: 'items',
+    fields: [
+      { k: 'name', label: '名称', type: 'text', value: d.name, ph: '例如：垃圾袋' },
+      {
+        k: 'category', label: '类别', type: 'select', value: d.category,
+        options: [{ v: '消耗品', t: '消耗品（会用完，需要补货）' }, { v: '共享设备', t: '共享设备（不消耗）' }]
+      },
+      { k: 'unit', label: '单位', type: 'text', value: d.unit, ph: '包 / 瓶 / 只 / 台' },
+      { k: 'stock', label: '当前库存', type: 'number', value: d.stock, min: 0, hint: '改小库存等于登记一次消耗' },
+      { k: 'safety', label: '安全库存', type: 'number', value: d.safety, min: 0, hint: '低于它就会提醒采购；填 0 表示不追踪' },
+      { k: 'restockQty', label: '每次补货量', type: 'number', value: d.restockQty, min: 1 },
+      { k: 'purchaserId', label: '采购负责人', type: 'select', value: d.purchaserId || '', options: memberOpts },
+      { k: 'location', label: '存放位置', type: 'text', value: d.location, ph: '例如：厨房柜' }
+    ],
+    okText: isNew ? '添加' : '保存修改',
+    act: isNew ? 'itemNew' : 'itemSave',
+    id: isNew ? '' : d.id,
+    footer: isNew ? '' : delFooter('itemDel', d.id, '删除这个物品')
+  });
+}
+
+/* ---------- 公约 ---------- */
+function pactForm(p) {
+  const isNew = !p;
+  const d = p || { text: '', category: '卫生与清洁', binding: '', enforceable: false };
+  formSheet({
+    title: isNew ? '新增公约条款' : '查看与编辑条款',
+    sub: isNew ? '把容易起争执的事提前写成条款' : d.text,
+    tab: 'pact',
+    fields: [
+      { k: 'text', label: '条款内容', type: 'textarea', value: d.text, ph: '例如：垃圾每日 22:00 前清运' },
+      {
+        k: 'category', label: '分类', type: 'select', value: CAT_PACT.indexOf(d.category) >= 0 ? d.category : '其他',
+        options: CAT_PACT.map(c => ({ v: c, t: c }))
+      },
+      {
+        k: 'enforceable', label: '能否被系统约束', type: 'select', value: d.enforceable ? '1' : '0',
+        options: [{ v: '0', t: '仅靠自觉（系统无法约束）' }, { v: '1', t: '已绑定（由应用自动执行）' }]
+      },
+      {
+        k: 'binding', label: '绑定说明', type: 'text', value: d.binding, ph: '例如：M1 · 账单默认分摊方式',
+        hint: '会显示在条款下方；留空则不显示'
+      }
+    ],
+    okText: isNew ? '添加条款' : '保存修改',
+    act: isNew ? 'pactNew' : 'pactSave',
+    id: isNew ? '' : d.id,
+    footer: isNew ? '' : delFooter('pactDel', d.id, '删除这条条款')
+  });
+}
+
+/* ---------- 提案 ---------- */
+function voteForm(v) {
+  const isNew = !v;
+  const d = v || { text: '', threshold: Math.min(2, Math.max(1, S.members.length)), days: 2 };
+  formSheet({
+    title: isNew ? '发起提案' : '编辑提案',
+    sub: isNew ? '拿不定主意的事，提出来让大家投个票' : d.text,
+    tab: 'pact',
+    fields: [
+      { k: 'text', label: '提案内容', type: 'textarea', value: d.text, ph: '例如：夏天空调统一设定为 26℃' },
+      {
+        k: 'threshold', label: '通过票数', type: 'number', value: d.threshold, min: 1, max: Math.max(1, S.members.length),
+        hint: '支持票达到这个数量即视为通过（当前房屋 ' + S.members.length + ' 人）'
+      },
+      { k: 'days', label: '截止（天后）', type: 'number', value: d.days || 2, min: 1, max: 30 }
+    ],
+    okText: isNew ? '发起' : '保存修改',
+    act: isNew ? 'voteNew' : 'voteSave',
+    id: isNew ? '' : d.id,
+    footer: isNew ? '' : delFooter('voteDel', d.id, '删除这个提案')
+  });
+}
+
+/* 公约改动后让版本号往前走一格 */
+function bumpPactVersion() {
+  const m = String(S.pactVersion || 'v1.0').match(/^v(\d+)\.(\d+)$/);
+  S.pactVersion = m ? ('v' + m[1] + '.' + (Number(m[2]) + 1)) : 'v1.1';
+}
+
+/* 排班按日期排序（改了日期之后必须重排） */
+function sortTasks() {
+  S.tasks.sort((a, b) => (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0)));
+}
+
 /* ---------- 结算单 ---------- */
 function monthlyReport(period) {
   const bills = S.bills.filter(b => (b.period || String(b.date).slice(0, 7)) === period);
@@ -1433,6 +1695,253 @@ const ACT = {
   bills() { BILLTAB = 'list'; render(); viewIn(); },
   settle() { TAB = 'bills'; BILLTAB = 'settle'; closeSheet(); render(); viewIn(); window.scrollTo(0, 0); },
   close() { closeSheet(); },
+
+  /* ============================================================
+     值日排班：新增 / 编辑 / 删除
+     ============================================================ */
+  newTask() {
+    if (!S.members.length) { toast('房屋里还没有成员'); return; }
+    taskForm(null);
+  },
+  editTask(el, id) {
+    const t = S.tasks.find(x => x.id === id);
+    if (!t) { toast('这条排班已经不存在了'); return; }
+    taskForm(t);
+  },
+  taskNew() {
+    try {
+      const v = readVals('date area assignee checklist');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date)) throw BizError('请选择日期');
+      const who = S.members.find(m => m.id === v.assignee);
+      if (!who) throw BizError('负责人必须是房屋成员');
+      const area = v.area || '值日';
+      if (S.tasks.some(t => t.date === v.date)) throw BizError(dcn(v.date) + ' 已经有一条排班，请直接编辑那一条');
+      const today = todayStr();
+      S.tasks.push({
+        id: uid('t'), area, date: v.date, assigneeId: who.id, originalAssigneeId: who.id,
+        status: v.date < today ? 'done' : 'pending',
+        checklist: parseList(v.checklist, area, null),
+        proofAt: v.date < today ? '—' : null,
+        isLateCheckin: false, verifiedBy: null, overdue: false,
+        history: [{ at: Date.now(), what: '由 ' + mName(S.me) + ' 手动新增' }]
+      });
+      sortTasks();
+      save(); closeSheet(); render(); toast('已新增 ' + dcn(v.date) + ' 的排班');
+    } catch (e) { fail(e); }
+  },
+  taskSave(el, id) {
+    try {
+      const t = S.tasks.find(x => x.id === id);
+      if (!t) throw BizError('这条排班已经不存在了');
+      const v = readVals('date area assignee checklist');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date)) throw BizError('请选择日期');
+      const who = S.members.find(m => m.id === v.assignee);
+      if (!who) throw BizError('负责人必须是房屋成员');
+      if (S.tasks.some(x => x.id !== t.id && x.date === v.date)) throw BizError(dcn(v.date) + ' 已经有另一条排班了');
+      t.date = v.date;
+      t.area = v.area || t.area;
+      t.assigneeId = who.id;
+      t.originalAssigneeId = who.id;
+      t.checklist = parseList(v.checklist, t.area, t.checklist);
+      if (t.status === 'done') t.checklist.forEach(c => { c.done = true; });
+      t.history = t.history || [];
+      t.history.push({ at: Date.now(), what: '由 ' + mName(S.me) + ' 修改排班' });
+      sortTasks();
+      save(); closeSheet(); render(); toast('排班已更新');
+    } catch (e) { fail(e); }
+  },
+  taskDel(el, id) {
+    const t = S.tasks.find(x => x.id === id);
+    if (!t) { toast('这条排班已经不存在了'); return; }
+    sheetConfirm('删除这条排班？', [
+      dcn(t.date) + ' · ' + t.area,
+      '负责人：' + mName(t.assigneeId),
+      '删除后不会自动补回'
+    ], '确认删除', 'taskDelDo', id, true);
+  },
+  taskDelDo(el, id) {
+    const i = S.tasks.findIndex(x => x.id === id);
+    if (i < 0) { toast('这条排班已经不存在了'); closeSheet(); return; }
+    S.tasks.splice(i, 1);
+    save(); closeSheet(); render(); toast('已删除这条排班');
+  },
+
+  /* ============================================================
+     公共物品：登记 / 编辑 / 删除
+     ============================================================ */
+  newItem() { itemForm(null); },
+  editItem(el, id) {
+    const i = S.items.find(x => x.id === id);
+    if (!i) { toast('这个物品已经不存在了'); return; }
+    itemForm(i);
+  },
+  itemNew() {
+    try {
+      const v = readVals('name category unit stock safety restockQty purchaserId location');
+      const name = v.name;
+      if (!name) throw BizError('请填写物品名称');
+      if (name.length > 20) throw BizError('名称不要超过 20 个字');
+      if (S.items.some(i => i.name === name)) throw BizError('已经有同名的物品了');
+      S.items.push({
+        id: uid('i'), name,
+        category: v.category === '共享设备' ? '共享设备' : '消耗品',
+        stock: Math.round(num(v.stock, '当前库存', 0, 99999)),
+        safety: Math.round(num(v.safety, '安全库存', 0, 99999)),
+        restockQty: Math.round(num(v.restockQty, '每次补货量', 1, 9999)),
+        unit: v.unit || '件', days: 0,
+        purchaserId: v.purchaserId || null,
+        scope: 'all', location: v.location || '', borrow: null
+      });
+      save(); closeSheet(); render(); toast('已添加「' + name + '」');
+    } catch (e) { fail(e); }
+  },
+  itemSave(el, id) {
+    try {
+      const it = S.items.find(x => x.id === id);
+      if (!it) throw BizError('这个物品已经不存在了');
+      const v = readVals('name category unit stock safety restockQty purchaserId location');
+      const name = v.name;
+      if (!name) throw BizError('请填写物品名称');
+      if (name.length > 20) throw BizError('名称不要超过 20 个字');
+      if (S.items.some(x => x.id !== it.id && x.name === name)) throw BizError('已经有同名的物品了');
+      it.name = name;
+      it.category = v.category === '共享设备' ? '共享设备' : '消耗品';
+      it.unit = v.unit || '件';
+      it.stock = Math.round(num(v.stock, '当前库存', 0, 99999));
+      it.safety = Math.round(num(v.safety, '安全库存', 0, 99999));
+      it.restockQty = Math.round(num(v.restockQty, '每次补货量', 1, 9999));
+      it.purchaserId = v.purchaserId || null;
+      it.location = v.location || '';
+      save(); closeSheet(); render(); toast('物品已更新');
+    } catch (e) { fail(e); }
+  },
+  itemDel(el, id) {
+    const i = S.items.find(x => x.id === id);
+    if (!i) { toast('这个物品已经不存在了'); return; }
+    const task = activeRestock(id);
+    sheetConfirm('删除「' + i.name + '」？', [
+      task ? '它有进行中的采购任务，会一并取消' : '物品记录会被移除',
+      '已经生成的账单不受影响',
+      '删除后无法自动恢复'
+    ], '确认删除', 'itemDelDo', id, true);
+  },
+  itemDelDo(el, id) {
+    const i = S.items.find(x => x.id === id);
+    if (!i) { toast('这个物品已经不存在了'); closeSheet(); return; }
+    S.items = S.items.filter(x => x.id !== id);
+    /* 关联的采购任务一并清掉，避免留下指向已删物品的孤儿记录 */
+    S.restocks = (S.restocks || []).filter(r => r.itemId !== id);
+    save(); closeSheet(); render(); toast('已删除「' + i.name + '」');
+  },
+
+  /* ============================================================
+     室友公约：查看 / 新增 / 编辑 / 删除
+     ============================================================ */
+  newPact() { pactForm(null); },
+  editPact(el, id) {
+    const p = S.pacts.find(x => x.id === id);
+    if (!p) { toast('这条条款已经不存在了'); return; }
+    pactForm(p);
+  },
+  pactNew() {
+    try {
+      const v = readVals('text category enforceable binding');
+      const text = v.text;
+      if (text.length < 2) throw BizError('条款内容太短');
+      if (text.length > 60) throw BizError('条款内容不要超过 60 个字');
+      const enf = v.enforceable === '1';
+      S.pacts.push({
+        id: uid('p'), text, category: v.category,
+        binding: v.binding || (enf ? '已绑定系统规则' : '仅靠自觉，系统无法约束'),
+        enforceable: enf, rule: null
+      });
+      bumpPactVersion();
+      save(); closeSheet(); render(); toast('已添加条款，公约更新为 ' + S.pactVersion);
+    } catch (e) { fail(e); }
+  },
+  pactSave(el, id) {
+    try {
+      const p = S.pacts.find(x => x.id === id);
+      if (!p) throw BizError('这条条款已经不存在了');
+      const v = readVals('text category enforceable binding');
+      const text = v.text;
+      if (text.length < 2) throw BizError('条款内容太短');
+      if (text.length > 60) throw BizError('条款内容不要超过 60 个字');
+      const enf = v.enforceable === '1';
+      p.text = text;
+      p.category = v.category;
+      p.enforceable = enf;
+      p.binding = v.binding || (enf ? '已绑定系统规则' : '仅靠自觉，系统无法约束');
+      bumpPactVersion();
+      save(); closeSheet(); render(); toast('条款已更新，公约升为 ' + S.pactVersion);
+    } catch (e) { fail(e); }
+  },
+  pactDel(el, id) {
+    const p = S.pacts.find(x => x.id === id);
+    if (!p) { toast('这条条款已经不存在了'); return; }
+    sheetConfirm('删除这条条款？', [p.text, '删除后公约版本会向前走一格', '这个动作无法自动撤销'], '确认删除', 'pactDelDo', id, true);
+  },
+  pactDelDo(el, id) {
+    const i = S.pacts.findIndex(x => x.id === id);
+    if (i < 0) { toast('这条条款已经不存在了'); closeSheet(); return; }
+    S.pacts.splice(i, 1);
+    bumpPactVersion();
+    save(); closeSheet(); render(); toast('条款已删除，公约更新为 ' + S.pactVersion);
+  },
+
+  /* ============================================================
+     提案与投票：发起 / 编辑 / 删除
+     ============================================================ */
+  newVote() { voteForm(null); },
+  editVote(el, id) {
+    const v = S.votes.find(x => x.id === id);
+    if (!v) { toast('这个提案已经不存在了'); return; }
+    voteForm(v);
+  },
+  voteNew() {
+    try {
+      const v = readVals('text threshold days');
+      const text = v.text;
+      if (text.length < 2) throw BizError('提案内容太短');
+      if (text.length > 60) throw BizError('提案内容不要超过 60 个字');
+      const threshold = Math.round(num(v.threshold, '通过票数', 1, Math.max(1, S.members.length)));
+      const days = Math.round(num(v.days, '截止天数', 1, 30));
+      S.votes.push({
+        id: uid('v'), text, support: [], against: [],
+        deadline: days + ' 天后截止',
+        deadlineAt: Date.now() + days * 86400000,
+        threshold, closed: false, anonymous: false
+      });
+      save(); closeSheet(); render(); toast('提案已发起，等大家投票');
+    } catch (e) { fail(e); }
+  },
+  voteSave(el, id) {
+    try {
+      const v0 = S.votes.find(x => x.id === id);
+      if (!v0) throw BizError('这个提案已经不存在了');
+      const v = readVals('text threshold days');
+      const text = v.text;
+      if (text.length < 2) throw BizError('提案内容太短');
+      if (text.length > 60) throw BizError('提案内容不要超过 60 个字');
+      v0.text = text;
+      v0.threshold = Math.round(num(v.threshold, '通过票数', 1, Math.max(1, S.members.length)));
+      const days = Math.round(num(v.days, '截止天数', 1, 30));
+      v0.deadline = days + ' 天后截止';
+      v0.deadlineAt = Date.now() + days * 86400000;
+      save(); closeSheet(); render(); toast('提案已更新');
+    } catch (e) { fail(e); }
+  },
+  voteDel(el, id) {
+    const v = S.votes.find(x => x.id === id);
+    if (!v) { toast('这个提案已经不存在了'); return; }
+    sheetConfirm('删除这个提案？', [v.text, '已有的投票记录会一并消失', '这个动作无法自动撤销'], '确认删除', 'voteDelDo', id, true);
+  },
+  voteDelDo(el, id) {
+    const i = S.votes.findIndex(x => x.id === id);
+    if (i < 0) { toast('这个提案已经不存在了'); closeSheet(); return; }
+    S.votes.splice(i, 1);
+    save(); closeSheet(); render(); toast('提案已删除');
+  },
 
   /* ---- 账单 ---- */
   newbill() {

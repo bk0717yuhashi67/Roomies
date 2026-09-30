@@ -112,7 +112,7 @@ a{color:var(--primary)}
 .moon{
   width:78px;height:78px;border-radius:50%;right:9%;top:8%;
   background:radial-gradient(circle at 34% 30%, var(--moon-core), var(--moon-edge) 68%, #C9BE92);
-  box-shadow:0 0 50px 14px var(--moon-glow), inset -14px -10px 22px rgba(150,140,105,.42);
+  box-shadow:0 0 38px 9px var(--moon-glow), inset -14px -10px 22px rgba(150,140,105,.42);
   animation:moonFloat 9s var(--ease-in-out) infinite;
 }
 .moon::after{
@@ -142,26 +142,32 @@ a{color:var(--primary)}
 @keyframes twinkle{0%,100%{opacity:.22;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
 
 /* 流星 */
+/* 流星：短、淡、位置与轨迹随机；方向固定向右下。
+   旋转角度由 JS 按视口实际比例算好 —— 否则 vw/vh 比例不同会让尾巴与轨迹错开。
+   去掉了 drop-shadow：它是「太亮太扎眼」的主因。 */
 .meteor{
-  width:150px;height:2px;border-radius:2px;top:12%;left:-160px;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.9));
-  filter:drop-shadow(0 0 6px rgba(255,255,255,.8));
-  opacity:0; animation:meteor 11s var(--ease-in-out) infinite 3s;
+  width:86px;height:1.5px;border-radius:2px;top:0;left:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.45));
+  opacity:0;transform-origin:100% 50%;
 }
 @keyframes meteor{
-  0%{opacity:0;transform:translate3d(0,0,0) rotate(18deg)}
-  6%{opacity:1}
-  22%{opacity:0;transform:translate3d(calc(100vw + 320px), 30vh, 0) rotate(18deg)}
-  100%{opacity:0;transform:translate3d(calc(100vw + 320px), 30vh, 0) rotate(18deg)}
+  0%{opacity:0;transform:translate3d(var(--mx,-12vw), var(--my,6vh), 0) rotate(var(--mrot,42deg))}
+  4%{opacity:.7}
+  13%{opacity:0;transform:translate3d(calc(var(--mx,-12vw) + var(--mdx,68vw)), calc(var(--my,6vh) + var(--mdy,50vh)), 0) rotate(var(--mrot,42deg))}
+  100%{opacity:0;transform:translate3d(calc(var(--mx,-12vw) + var(--mdx,68vw)), calc(var(--my,6vh) + var(--mdy,50vh)), 0) rotate(var(--mrot,42deg))}
 }
+/* 只在夜空播放 —— 白天完全不参与绘制 */
+[data-theme="night"] .sky .meteor{animation:meteor 13s linear infinite}
 
 /* 主题可见性：晴天才显示太阳与云，夜空才显示月亮与星 */
 .sky .sun,.sky .cloud{opacity:1;transition:opacity 520ms var(--ease)}
-.sky .moon,.sky .stars,.sky .meteor{opacity:0;transition:opacity 520ms var(--ease)}
+.sky .moon,.sky .stars{opacity:0;transition:opacity 520ms var(--ease)}
 [data-theme="night"] .sky .sun,[data-theme="night"] .sky .cloud{opacity:0}
 [data-theme="night"] .sky .moon{opacity:1}
 [data-theme="night"] .sky .stars{opacity:1}
-[data-theme="night"] .sky .meteor{opacity:0;animation-name:meteor}
+/* 星星的闪烁只在夜空跑：白天停掉，避免无意义的绘制 */
+.star{animation-play-state:paused}
+[data-theme="night"] .star{animation-play-state:running}
 
 /* 地平线微光 */
 .horizon{position:absolute;left:-10%;right:-10%;bottom:-12%;height:38%;border-radius:50% 50% 0 0;background:radial-gradient(ellipse at 50% 100%, var(--sun-glow), transparent 68%);opacity:.55;transition:opacity 520ms var(--ease)}
@@ -284,7 +290,7 @@ a{color:var(--primary)}
   backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);
   box-shadow:var(--glass-sh), inset 0 1px 0 var(--glass-in);
   transition:transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease), border-color var(--dur-fast) var(--ease);
-  animation:popIn 420ms var(--ease-out) backwards;
+  animation:popIn 320ms var(--ease-out) backwards;
 }
 @keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
 .acct:active{transform:scale(.975)}
@@ -317,7 +323,9 @@ a{color:var(--primary)}
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   transition:border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
 }
-.field input::placeholder{color:var(--ink-4)}
+.field input::placeholder,.field textarea::placeholder{color:var(--ink-4)}
+.field textarea{resize:vertical;min-height:62px;line-height:1.6;font-family:inherit}
+.field .f-hint{margin:7px 0 0;font-size:11.5px;color:var(--ink-4);line-height:1.55}
 .field input:focus,.field select:focus,.field textarea:focus{
   outline:none;border-color:var(--primary);background:var(--glass-strong);
   box-shadow:0 0 0 4px var(--primary-soft);
@@ -389,13 +397,29 @@ a{color:var(--primary)}
    ============================================================ */
 .sec{margin-bottom:18px}
 .sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding-left:2px}
+/* 区块标题右侧：统计文字 + 新增入口 */
+.sec-r{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink-3)}
+.mini-add{
+  width:26px;height:26px;flex:0 0 auto;border-radius:9px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--glass);border:1px solid var(--glass-brd);color:var(--primary);
+  font-size:16px;font-weight:800;line-height:1;
+  transition:transform 140ms var(--ease-out), background 140ms var(--ease), border-color 140ms var(--ease);
+}
+.mini-add:active{transform:scale(.88)}
+@media (hover:hover) and (pointer:fine){.mini-add:hover{background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 30%,transparent)}}
 .sec-h h2{margin:0;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
 .sec-h h2::before{content:"";width:3px;height:14px;border-radius:2px;background:linear-gradient(var(--primary-2),var(--primary))}
 .sec-h .more{font-size:12px;color:var(--ink-3)}
 
-/* 视图切换过渡：只动 opacity / transform，不触发重排，也不给每张卡片各自动画 */
-@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-#view.view-enter{animation:viewIn 260ms var(--ease-out)}
+/* 视图切换：区块依次淡入（40ms 错峰），比整页一起动更有层次。
+   只动 opacity / transform，且不给每张卡片各自动画 —— 列表长时那样非常贵 */
+@keyframes secIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+#view.view-enter > .sec{animation:secIn 300ms var(--ease-out) backwards}
+#view.view-enter > .sec:nth-child(2){animation-delay:40ms}
+#view.view-enter > .sec:nth-child(3){animation-delay:80ms}
+#view.view-enter > .sec:nth-child(4){animation-delay:120ms}
+#view.view-enter > .sec:nth-child(n+5){animation-delay:160ms}
 
 .card{
   padding:16px 18px;margin-bottom:11px;position:relative;
@@ -479,6 +503,9 @@ a{color:var(--primary)}
   transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
 }
 .toast.on{opacity:1;transform:translate(-50%,0)}
+/* 弹层打开时把 toast 移到顶部 —— 否则它会正好盖住表单字段 */
+body.sheet-open .toast{bottom:auto;top:22px;transform:translate(-50%,-14px)}
+body.sheet-open .toast.on{transform:translate(-50%,0)}
 
 /* 隐身/工具 */
 .hide{display:none !important}
@@ -499,7 +526,7 @@ a{color:var(--primary)}
 .card.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 28%,var(--glass-brd))}
 .card.alert{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 30%,var(--glass-brd))}
 .card.tap{cursor:pointer;transition:transform var(--dur-base) var(--ease-out),box-shadow var(--dur-base) var(--ease),border-color var(--dur-fast) var(--ease)}
-@media (hover:hover) and (pointer:fine){.card.tap:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift)}}
+@media (hover:hover) and (pointer:fine){.card.tap:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}}
 .card.tap:active{transform:scale(.985)}
 
 .tico{width:38px;height:38px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:16px;font-weight:800}

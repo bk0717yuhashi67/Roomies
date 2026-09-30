@@ -108,8 +108,49 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await page.click('#btnTheme');
   await wait(900);
   await page.screenshot({ path: path.join(OUT, '08-night.png'), fullPage: true });
+
+  /* 流星参数：验证「位置随机 + 向右下 + 变小变淡」 */
+  const meteorInfo = await page.evaluate(() => {
+    const m = document.querySelector('.meteor');
+    if (!m) return null;
+    const cs = getComputedStyle(m);
+    return {
+      mx: cs.getPropertyValue('--mx').trim(), my: cs.getPropertyValue('--my').trim(),
+      mdx: cs.getPropertyValue('--mdx').trim(), mdy: cs.getPropertyValue('--mdy').trim(),
+      mrot: cs.getPropertyValue('--mrot').trim(),
+      size: cs.width + ' × ' + cs.height,
+      filter: cs.filter || 'none',
+      anim: cs.animationName
+    };
+  });
+  console.log('\n=== 流星参数（夜空主题）===');
+  console.log(JSON.stringify(meteorInfo, null, 2));
+
+  /* 流星只在动画的 5%~16% 时段可见，直接截图多半扑空 —— 定格到那一帧再看 */
+  await page.evaluate(() => {
+    const m = document.querySelector('.meteor');
+    if (m) { m.style.animationDelay = '-1.3s'; m.style.animationPlayState = 'paused'; }
+  });
+  await wait(320);
+  await page.screenshot({ path: path.join(OUT, '10-meteor.png') });
+  await page.evaluate(() => {
+    const m = document.querySelector('.meteor');
+    if (m) { m.style.animationDelay = ''; m.style.animationPlayState = ''; }
+  });
+
   await page.click('#btnTheme');
   await wait(400);
+
+  /* 编辑弹层：入口可点、关闭后能移除（含退出动画的降级路径） */
+  await page.evaluate(() => { const t = document.querySelector('[data-act="tab"][data-id="shift"]'); if (t) t.click(); });
+  await wait(450);
+  await page.evaluate(() => { const b = document.querySelector('[data-act="newTask"]'); if (b) b.click(); });
+  await wait(550);
+  await page.screenshot({ path: path.join(OUT, '09-edit-sheet.png'), fullPage: true });
+  console.log('新增排班弹层可打开:', await page.evaluate(() => !!document.querySelector('#modalRoot .sheet')));
+  await page.evaluate(() => { const b = document.querySelector('#modalRoot [data-act="close"]'); if (b) b.click(); });
+  await wait(700);
+  console.log('关闭后弹层已移除:', await page.evaluate(() => !document.querySelector('#modalRoot .sheet')));
 
   /* 连续切 tab 是否产生长任务 */
   const longTasks = await page.evaluate(() => new Promise(res => {
