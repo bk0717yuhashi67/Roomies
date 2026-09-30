@@ -1676,8 +1676,7 @@ function viewPact() {
     <div class="card">
       <div class="cr ico">
         <span class="tico item">数</span>
-        <div class="cr-b"><h3>账单 ${S.bills.length} 笔 · 任务 ${S.tasks.length} 条 · 物品 ${S.items.length} 项</h3>
-          <p>数据只保存在这台设备的浏览器里，换设备或清理浏览器数据都会丢失</p></div>
+        <div class="cr-b"><h3>账单 ${S.bills.length} 笔 · 任务 ${S.tasks.length} 条 · 物品 ${S.items.length} 项</h3></div>
       </div>
       <div class="btnrow pri">
         <button class="btn sm" data-act="exportData" type="button">导出备份</button>
@@ -2529,7 +2528,7 @@ function initTheme() {
 }
 
 /* ============================================================
-   2 · 账号体系（纯本地：账号只存在这台设备上）
+   2 · 账号体系
    ============================================================ */
 const ACC_KEY = 'roomies_accounts';
 const SESSION_KEY = 'roomies_session';
