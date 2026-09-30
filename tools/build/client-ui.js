@@ -177,7 +177,9 @@ function addMemberToHouse(found, name) {
 function emptyState(acc) {
   const ds = todayStr();
   const s = seed();                      // 只沿用字段结构，业务数据一律清空
-  s.house = { name: (acc.name || '我') + '的合租屋', inviteCode: genCode() };
+  /* 房屋名：注册时填了就用它，否则退回「昵称 + 的合租屋」 */
+  const hName = String((acc && acc.houseName) || '').trim();
+  s.house = { name: hName || ((acc.name || '我') + '的合租屋'), inviteCode: genCode() };
   s.members = [{ id: 'm1', name: acc.name || '我', room: '主卧', weight: 1, joinedAt: ds }];
   s.me = 'm1';
   s.bills = []; s.transfers = []; s.tasks = []; s.swaps = [];
@@ -214,7 +216,7 @@ function ensureInviteCode() {
   if (!S.house.inviteCode) { S.house.inviteCode = genCode(); save(); }
 }
 
-async function register(name, pw, pw2, claimDemo, inviteCode) {
+async function register(name, pw, pw2, claimDemo, inviteCode, houseName) {
   name = String(name || '').trim();
   if (name.length < 2) throw BizError('昵称至少 2 个字');
   if (name.length > 12) throw BizError('昵称不要超过 12 个字');
@@ -225,6 +227,9 @@ async function register(name, pw, pw2, claimDemo, inviteCode) {
 
   const code = String(inviteCode || '').trim().toUpperCase();
   if (code && code.length !== 6) throw BizError('邀请码是 6 位');
+  /* 房屋名只在「创建」时才有意义；「加入」时沿用屋主的房屋名，忽略传入值 */
+  const hName = String(houseName || '').trim();
+  if (!code && hName.length > 12) throw BizError('房屋名称不要超过 12 个字');
 
   const salt = uid('s');
   const hash = await hashPw(pw, salt);
@@ -233,7 +238,8 @@ async function register(name, pw, pw2, claimDemo, inviteCode) {
     hue: Math.floor(Math.random() * 360),
     glyph: GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
     createdAt: Date.now(), lastLoginAt: null,
-    houseOwnerId: null, memberId: null, claimDemo: !!claimDemo
+    houseOwnerId: null, memberId: null, claimDemo: !!claimDemo,
+    houseName: code ? '' : hName
   };
 
   let joined = false;
@@ -368,11 +374,27 @@ function renderAuth() {
           <input id="rgName" placeholder="例如：小林" maxlength="12">
           <div class="err"></div>
         </div>
-        <div class="field" id="rgCodeF">
-          <label for="rgCode">邀请码（有就填）</label>
+
+        <div class="field">
+          <label>接下来要</label>
+          <div class="seg" id="rgMode" data-mode="create" role="tablist" aria-label="创建或加入合租房">
+            <button type="button" class="seg-i on" data-mode="create" role="tab" aria-selected="true">创建一间合租房</button>
+            <button type="button" class="seg-i" data-mode="join" role="tab" aria-selected="false">加入室友的</button>
+          </div>
+        </div>
+
+        <div class="field" id="rgHouseF">
+          <label for="rgHouse">房屋名称<span class="opt">选填</span></label>
+          <input id="rgHouse" placeholder="例如：安心小屋" maxlength="12">
+          <p class="f-hint">不填就叫「你的昵称 + 的合租屋」</p>
+        </div>
+
+        <div class="field hide" id="rgCodeF">
+          <label for="rgCode">邀请码<span class="req">必填</span></label>
           <input id="rgCode" placeholder="6 位邀请码" maxlength="6" autocapitalize="characters" style="letter-spacing:4px;text-transform:uppercase">
           <div class="err"></div>
         </div>
+
         <div class="f2">
           <div class="field" id="rgPwF">
             <label for="rgPw">密码</label>
@@ -386,11 +408,14 @@ function renderAuth() {
           </div>
         </div>
         <div class="pw-meter" id="pwMeter"><i></i><i></i><i></i><i></i></div>
-        ${canClaim ? `<label class="chk" style="margin-top:14px" id="rgClaimWrap">
+
+        <p class="f-hint" id="rgTip" style="margin-top:14px"></p>
+
+        ${canClaim ? `<label class="chk" style="margin-top:6px" id="rgClaimWrap">
           <input type="checkbox" id="rgClaim" checked>
           <span>载入本机已有的数据</span>
         </label>` : ''}
-        <button class="btn primary wide lg" type="submit" style="margin-top:18px">创建并进入</button>
+        <button class="btn primary wide lg" type="submit" id="rgSubmit" style="margin-top:18px">创建并进入</button>
       </form>
       <div class="btnrow" style="margin-top:14px">
         <button class="btn link sm" data-act="authPick" type="button">返回账号列表</button>
@@ -413,23 +438,53 @@ function renderAuth() {
     });
   });
 
-  /* 填了邀请码就是加入别人房屋，此时不该再问「是否载入本机数据」 */
-  const rgCodeEl = $('#rgCode'), claimWrap = $('#rgClaimWrap');
-  if (rgCodeEl && claimWrap) {
-    rgCodeEl.addEventListener('input', () => {
-      claimWrap.classList.toggle('hide', !!rgCodeEl.value.trim());
+  /* 「创建 / 加入」二选一：切换字段可见性与说明文案。
+     这样就不存在「邀请码有就填」这种模糊态 —— 用户必须先明确表达意图。 */
+  const modeBox = $('#rgMode');
+  const modeBtns = modeBox ? modeBox.querySelectorAll('.seg-i') : [];
+  const claimWrap = $('#rgClaimWrap');
+  const TIP = {
+    create: '创建后会拿到 6 位邀请码，发给室友，他们在注册时选「加入室友的」就能进来。',
+    join: '向屋主要 6 位邀请码。填入后你就是这间房的成员，和他看到同一份数据。'
+  };
+  function applyMode(m) {
+    if (modeBox) modeBox.dataset.mode = m;
+    modeBtns.forEach(b => {
+      const on = b.dataset.mode === m;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    const hf = $('#rgHouseF'), cf = $('#rgCodeF'), submit = $('#rgSubmit'), tip = $('#rgTip');
+    if (hf) hf.classList.toggle('hide', m !== 'create');
+    if (cf) cf.classList.toggle('hide', m !== 'join');
+    /* 加入别人房屋时，「载入本机旧数据」没有意义 */
+    if (claimWrap) claimWrap.classList.toggle('hide', m !== 'create');
+    if (submit) submit.textContent = m === 'join' ? '加入并进入' : '创建并进入';
+    if (tip) tip.textContent = TIP[m] + '（邀请码只在同一台设备内有效，跨设备需要云端支持）';
   }
+  modeBtns.forEach(b => b.addEventListener('click', () => applyMode(b.dataset.mode)));
+  applyMode('create');
 
   const rgForm = $('#rgForm');
   if (rgForm) rgForm.addEventListener('submit', async ev => {
     ev.preventDefault();
-    ['rgNameF', 'rgCodeF', 'rgPwF', 'rgPw2F'].forEach(id => $('#' + id).classList.remove('bad'));
+    ['rgNameF', 'rgCodeF', 'rgPwF', 'rgPw2F', 'rgHouseF'].forEach(id => {
+      const el = $('#' + id); if (el) el.classList.remove('bad');
+    });
+    const mode = (modeBox && modeBox.dataset.mode) || 'create';
     const name = $('#rgName').value, pw = $('#rgPw').value, pw2 = $('#rgPw2').value;
     const claim = $('#rgClaim') ? $('#rgClaim').checked : false;
-    const code = $('#rgCode') ? $('#rgCode').value : '';
+    /* 「加入」模式下才读邀请码；「创建」模式直接把空串传下去 */
+    const code = mode === 'join' ? ($('#rgCode') ? $('#rgCode').value : '') : '';
+    const house = (mode === 'create' && $('#rgHouse')) ? $('#rgHouse').value : '';
+    if (mode === 'join' && !String(code).trim()) {
+      const f = $('#rgCodeF');
+      f.classList.add('bad');
+      f.querySelector('.err').textContent = '加入房屋必须填邀请码';
+      return;
+    }
     try {
-      const r = await register(name, pw, pw2, claim, code);
+      const r = await register(name, pw, pw2, claim, code, house);
       enterApp(r.acc);
     } catch (e) {
       const msg = e.message || '创建失败';
@@ -437,6 +492,7 @@ function renderAuth() {
       if (/昵称/.test(msg)) f = $('#rgNameF');
       else if (/一致/.test(msg)) f = $('#rgPw2F');
       else if (/邀请码/.test(msg)) f = $('#rgCodeF');
+      else if (/房屋名称/.test(msg)) f = $('#rgHouseF');
       f.classList.add('bad');
       f.querySelector('.err').textContent = msg;
     }

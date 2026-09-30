@@ -671,6 +671,28 @@ function viewHome() {
   const myScore = scoreOf(me);
 
   let h = '';
+
+  /* 全新房屋（只有自己、还没有任何记录）：把邀请码放到第一屏最显眼处。
+     注册完最需要知道的就是「下一步该干什么」，藏进账号菜单太深。
+     记录一旦产生就不再显示，也可以手动关掉。 */
+  const brandNew = S.members.length === 1 && !S.bills.length && !S.tasks.length
+    && !S.items.length && !S.pacts.length && !S.votes.length;
+  if (brandNew && !S.hideInviteTip && S.house && S.house.inviteCode) {
+    h += `<div class="card invite-tip">
+      <div class="cr">
+        <span class="tico pact">邀</span>
+        <div class="cr-b"><h3>把邀请码发给室友</h3>
+          <p>他们创建账号时选「加入室友的」，输入这个码就能进这间房</p></div>
+        <button class="x-btn" data-act="hideTip" type="button" aria-label="不再显示" title="不再显示">×</button>
+      </div>
+      <div class="code-row">
+        <span class="code">${esc(S.house.inviteCode)}</span>
+        <button class="btn ghost sm" data-act="copyCode" type="button">复制</button>
+      </div>
+      <p class="f-hint">邀请码只在同一台设备内有效，跨设备加入需要云端支持</p>
+    </div>`;
+  }
+
   const netTxt = myNet > 0 ? '+' + fmt(myNet) : (myNet < 0 ? '-' + fmt(-myNet) : fmt(0));
   const netNote = myNet > 0 ? '应收 · 别人欠你' : (myNet < 0 ? '应付 · 你欠别人' : '已全部结清');
   h += `<div class="hero">
@@ -1695,6 +1717,13 @@ const ACT = {
   bills() { BILLTAB = 'list'; render(); viewIn(); },
   settle() { TAB = 'bills'; BILLTAB = 'settle'; closeSheet(); render(); viewIn(); window.scrollTo(0, 0); },
   close() { closeSheet(); },
+
+  /* 收起首页的邀请引导（邀请码之后仍可在账号菜单里找到） */
+  hideTip() {
+    S.hideInviteTip = true;
+    save(); render();
+    toast('已收起，邀请码在「账号菜单 → 房屋邀请码」里');
+  },
 
   /* ============================================================
      值日排班：新增 / 编辑 / 删除

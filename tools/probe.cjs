@@ -66,6 +66,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await page.screenshot({ path: path.join(OUT, '02-register.png'), fullPage: true });
 
   await page.type('#rgName', '测试住户');
+  await page.screenshot({ path: path.join(OUT, '02b-create.png'), fullPage: true });
+  /* 切到「加入」模式：邀请码出现、房屋名隐藏 */
+  await page.evaluate(() => { const b = document.querySelector('[data-mode="join"]'); if (b) b.click(); });
+  await wait(420);
+  await page.screenshot({ path: path.join(OUT, '02c-join.png'), fullPage: true });
+  await page.evaluate(() => { const b = document.querySelector('[data-mode="create"]'); if (b) b.click(); });
+  await wait(420);
   await page.type('#rgPw', 'test1234');
   await page.type('#rgPw2', 'test1234');
   const claim = await page.$('#rgClaim');

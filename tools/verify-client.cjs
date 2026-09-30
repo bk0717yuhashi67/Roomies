@@ -182,10 +182,26 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     const { dom, errors } = makeDom(null);
     const d = dom.window.document;
     await wait(170);
-    click(d, '[data-act="authNew"]'); await wait(60);
+    click(d, '[data-act="authNew"]'); await wait(80);
+
+    /* 「创建 / 加入」二选一：默认创建，此时不该出现邀请码字段 */
+    check('默认选中「创建一间合租房」', q(d, '#rgMode').dataset.mode === 'create');
+    check('创建模式显示房屋名、隐藏邀请码',
+      !q(d, '#rgHouseF').classList.contains('hide') && q(d, '#rgCodeF').classList.contains('hide'));
+    click(d, '[data-mode="join"]'); await wait(60);
+    check('加入模式显示邀请码（标注必填）并隐藏房屋名',
+      !q(d, '#rgCodeF').classList.contains('hide') && /必填/.test(q(d, '#rgCodeF').textContent) && q(d, '#rgHouseF').classList.contains('hide'));
+
+    /* 加入模式不填邀请码直接提交：必须被拦下，且不产生账号 */
     q(d, '#rgName').value = '新人';
     q(d, '#rgPw').value = 'newpass2026';
     q(d, '#rgPw2').value = 'newpass2026';
+    submit(d, '#rgForm'); await wait(150);
+    check('加入模式不填邀请码会被拒绝', /必须填邀请码/.test(q(d, '#rgCodeF').textContent));
+    check('被拒绝时不创建账号', JSON.parse(dump(dom).roomies_accounts || '[]').length === 0);
+
+    /* 切回「创建」正常建号 */
+    click(d, '[data-mode="create"]'); await wait(60);
     submit(d, '#rgForm'); await wait(460);
 
     const acc = JSON.parse(dump(dom).roomies_accounts || '[]')[0];
@@ -201,6 +217,16 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     check('不再出现演示数据里的「小林」', !(st.members || []).some(m => m.name === '小林'));
     check('房屋已自动生成邀请码', /^[A-Z2-9]{6}$/.test((st.house || {}).inviteCode || ''), (st.house || {}).inviteCode);
     check('顶栏显示的是本人房屋', /新人/.test(q(d, '#houseName').textContent), q(d, '#houseName').textContent);
+
+    /* 新建房屋：首页就该把邀请码摆出来，而不是让用户自己去账号菜单里翻 */
+    const vHtml = () => q(d, '#view').innerHTML;
+    check('新房屋首页显示邀请码引导卡', /把邀请码发给室友/.test(vHtml()));
+    check('引导卡里直接显示那 6 位邀请码', new RegExp((st.house || {}).inviteCode || 'x').test(vHtml()));
+    click(d, '[data-act="hideTip"]'); await wait(120);
+    check('引导卡可以收起', !/把邀请码发给室友/.test(vHtml()));
+    const st2 = JSON.parse(dump(dom)['roomies_data_' + acc.id] || '{}');
+    check('收起状态已写入数据（刷新后不会又冒出来）', st2.hideInviteTip === true, String(st2.hideInviteTip));
+
     check('无运行时错误', errors.length === 0, errors.join(' | '));
   }
 
@@ -212,14 +238,16 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     await wait(170);
 
     /* 屋主先开户 */
-    click(d, '[data-act="authNew"]'); await wait(60);
+    click(d, '[data-act="authNew"]'); await wait(80);
     q(d, '#rgName').value = '屋主';
+    q(d, '#rgHouse').value = '测试小屋';
     q(d, '#rgPw').value = 'owner2026';
     q(d, '#rgPw2').value = 'owner2026';
     submit(d, '#rgForm'); await wait(460);
     const owner = JSON.parse(dump(dom).roomies_accounts || '[]')[0];
     const house = JSON.parse(dump(dom)['roomies_data_' + owner.id] || '{}');
     const code = (house.house || {}).inviteCode;
+    check('创建时填的房屋名生效', (house.house || {}).name === '测试小屋', (house.house || {}).name);
     check('屋主房屋有 6 位邀请码', /^[A-Z2-9]{6}$/.test(code || ''), code);
     click(d, '#btnAccount'); await wait(70);
     const accSheetH = q(d, '#modalRoot .sheet');
@@ -229,8 +257,10 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     /* 换人：退出后带邀请码注册 */
     click(d, '#btnAccount'); await wait(60);
     click(d, '[data-act="logout"]'); await wait(130);
-    click(d, '[data-act="authNew"]'); await wait(60);
+    click(d, '[data-act="authNew"]'); await wait(80);
     q(d, '#rgName').value = '室友';
+    /* 必须先切到「加入室友的」—— 否则邀请码会被「创建」模式忽略，这正是本次改动要表达的意图 */
+    click(d, '[data-mode="join"]'); await wait(60);
     q(d, '#rgCode').value = code;
     q(d, '#rgPw').value = 'mate2026';
     q(d, '#rgPw2').value = 'mate2026';
@@ -244,7 +274,10 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     const shared = JSON.parse(dump(dom)['roomies_data_' + owner.id] || '{}');
     check('屋主房屋里多了室友成员', (shared.members || []).length === 2, (shared.members || []).map(m => m.name).join(','));
     check('两人看到同一间房屋', (shared.house || {}).inviteCode === code, (shared.house || {}).name);
+    check('加入者不会覆盖屋主填的房屋名', (shared.house || {}).name === '测试小屋', (shared.house || {}).name);
+    check('室友账号不带自己的房屋名（用屋主的）', !mate.houseName, JSON.stringify(mate.houseName));
     check('室友进入后当前身份是自己', /室友/.test(q(d, '#houseSub').textContent), q(d, '#houseSub').textContent);
+    check('房屋不再只有自己时，引导卡自动消失', !/把邀请码发给室友/.test(q(d, '#view').innerHTML));
     check('无运行时错误', errors.length === 0, errors.join(' | '));
 
     /* 错误邀请码 */
@@ -252,6 +285,7 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     click(d, '[data-act="logout"]'); await wait(130);
     click(d, '[data-act="authNew"]'); await wait(60);
     q(d, '#rgName').value = '陌生人';
+    click(d, '[data-mode="join"]'); await wait(50);   /* 必须切到加入模式，邀请码才会被采用 */
     q(d, '#rgCode').value = 'ZZZZZZ';
     q(d, '#rgPw').value = 'stranger26';
     q(d, '#rgPw2').value = 'stranger26';

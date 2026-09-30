@@ -335,6 +335,36 @@ a{color:var(--primary)}
 .field.bad .err{display:block}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:560px){.f2{grid-template-columns:1fr}}
+.field label .opt{font-weight:600;color:var(--ink-4);margin-left:5px}
+.field label .req{font-weight:700;color:var(--accent);margin-left:5px}
+
+/* 分段控件：用于「创建 / 加入」这类二选一，比 radio 更清楚也更省空间 */
+.seg{display:flex;gap:6px;padding:5px;border-radius:15px;background:var(--line-2);border:1px solid var(--glass-brd)}
+.seg-i{
+  flex:1;padding:11px 10px;border-radius:11px;border:none;background:none;cursor:pointer;
+  font-size:13.5px;font-weight:700;color:var(--ink-3);white-space:nowrap;
+  transition:background 170ms var(--ease), color 170ms var(--ease), box-shadow 170ms var(--ease), transform var(--dur-press) var(--ease-out);
+}
+.seg-i.on{background:var(--glass-strong);color:var(--ink);box-shadow:0 3px 10px -4px rgba(0,0,0,.22)}
+.seg-i:active{transform:scale(.97)}
+
+/* 首页的邀请码引导卡 */
+.invite-tip{border-color:color-mix(in srgb,var(--primary) 26%,var(--glass-brd))}
+.invite-tip .code-row{display:flex;align-items:center;gap:10px;margin-top:14px}
+.invite-tip .code{
+  flex:1;padding:13px 14px;border-radius:14px;text-align:center;
+  font-size:23px;font-weight:800;letter-spacing:7px;text-indent:7px;
+  background:var(--glass-strong);border:1px dashed color-mix(in srgb,var(--primary) 38%,transparent);
+  color:var(--ink);font-variant-numeric:tabular-nums;
+}
+.x-btn{
+  width:26px;height:26px;flex:0 0 auto;border-radius:50%;border:none;cursor:pointer;
+  background:var(--line-2);color:var(--ink-3);font-size:15px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-press) var(--ease-out);
+}
+.x-btn:active{transform:scale(.9)}
+@media (hover:hover) and (pointer:fine){.x-btn:hover{background:var(--line);color:var(--ink-2)}}
 
 /* 密码强度 */
 .pw-meter{display:flex;gap:5px;margin-top:8px}
