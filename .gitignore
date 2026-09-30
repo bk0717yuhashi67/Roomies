@@ -9,3 +9,6 @@ desktop.ini
 
 # 依赖（本项目无构建步骤，正常不会产生）
 node_modules/
+
+# 构建中间产物（最终交付物始终是单文件 index.html）
+tools/build/
