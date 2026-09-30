@@ -6,8 +6,8 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'app.html'), 'utf8');
-const URL_ = 'http://localhost:8080/app.html';
+const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const URL_ = 'http://localhost:8080/';
 
 let pass = 0, fail = 0; const fails = [];
 const check = (label, ok, extra) => {
@@ -53,7 +53,7 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     await wait(160);
     check('显示登录页', !q(d, '#authStage').classList.contains('hide'));
     check('主壳默认隐藏', q(d, '#appShell').classList.contains('hide'));
-    check('提示创建第一个账号', /创建第一个账号/.test(txt(d)));
+    check('提示创建账号', /创建账号/.test(txt(d)));
     check('Logo 已注入 SVG', !!q(d, '#logoAuth svg'), (q(d, '#logoAuth svg') ? 'yes' : 'no'));
     check('星空装饰已生成', d.querySelectorAll('#stars .star').length > 40, d.querySelectorAll('#stars .star').length + ' 颗');
     check('默认主题已写入 data-theme', !!d.documentElement.dataset.theme, d.documentElement.dataset.theme);
@@ -108,7 +108,7 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     click(d, '#btnAccount'); await wait(80);
     const sheet = q(d, '#modalRoot .sheet');
     check('账号菜单可打开', !!sheet && /当前身份/.test(sheet.innerHTML));
-    check('账号菜单可切换身份', !!sheet && /切为/.test(sheet.innerHTML));
+    check('账号菜单显示房屋邀请码', !!sheet && /房屋邀请码/.test(sheet.innerHTML));
     click(d, '#modalRoot .mask'); await wait(50);
 
     check('无运行时错误', errors.length === 0, errors.join(' | '));
@@ -176,13 +176,95 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     check('场景无运行时错误', errors.length === 0, errors.join(' | '));
   }
 
-  /* ---------- F. 免登录 Demo 未受影响 ---------- */
-  console.log('\n===== F · 免登录 Demo（index.html）仍在 =====');
+  /* ---------- G. 新账号：空房屋 ---------- */
+  console.log('\n===== G · 新建账号不勾选 → 空房屋 =====');
   {
-    const demoHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-    check('index.html 仍存在且可独立运行', demoHtml.length > 50000, Math.round(demoHtml.length / 1024) + ' KB');
-    check('demo 不含账号体系（保持免登录）', !/roomies_accounts/.test(demoHtml));
-    check('app.html 是自包含单文件', !/src="[^"]*\.js"/.test(HTML) && !/href="[^"]*\.css"/.test(HTML));
+    const { dom, errors } = makeDom(null);
+    const d = dom.window.document;
+    await wait(170);
+    click(d, '[data-act="authNew"]'); await wait(60);
+    q(d, '#rgName').value = '新人';
+    q(d, '#rgPw').value = 'newpass2026';
+    q(d, '#rgPw2').value = 'newpass2026';
+    submit(d, '#rgForm'); await wait(460);
+
+    const acc = JSON.parse(dump(dom).roomies_accounts || '[]')[0];
+    const st = JSON.parse(dump(dom)['roomies_data_' + (acc && acc.id)] || '{}');
+    check('不勾选时是空房屋（无账单）', Array.isArray(st.bills) && st.bills.length === 0, (st.bills || []).length + ' 笔');
+    check('不勾选时没有值日记录', Array.isArray(st.tasks) && st.tasks.length <= 7, (st.tasks || []).length + ' 条（仅本周轮值）');
+    check('成员只有账号本人', (st.members || []).length === 1 && st.members[0].name === '新人', (st.members || []).map(m => m.name).join(','));
+    check('不再出现演示数据里的「小林」', !(st.members || []).some(m => m.name === '小林'));
+    check('房屋已自动生成邀请码', /^[A-Z2-9]{6}$/.test((st.house || {}).inviteCode || ''), (st.house || {}).inviteCode);
+    check('顶栏显示的是本人房屋', /新人/.test(q(d, '#houseName').textContent), q(d, '#houseName').textContent);
+    check('无运行时错误', errors.length === 0, errors.join(' | '));
+  }
+
+  /* ---------- H. 邀请码加入房屋 ---------- */
+  console.log('\n===== H · 邀请码加入房屋 =====');
+  {
+    const { dom, errors } = makeDom(null);
+    const d = dom.window.document;
+    await wait(170);
+
+    /* 屋主先开户 */
+    click(d, '[data-act="authNew"]'); await wait(60);
+    q(d, '#rgName').value = '屋主';
+    q(d, '#rgPw').value = 'owner2026';
+    q(d, '#rgPw2').value = 'owner2026';
+    submit(d, '#rgForm'); await wait(460);
+    const owner = JSON.parse(dump(dom).roomies_accounts || '[]')[0];
+    const house = JSON.parse(dump(dom)['roomies_data_' + owner.id] || '{}');
+    const code = (house.house || {}).inviteCode;
+    check('屋主房屋有 6 位邀请码', /^[A-Z2-9]{6}$/.test(code || ''), code);
+    click(d, '#btnAccount'); await wait(70);
+    const accSheetH = q(d, '#modalRoot .sheet');
+    check('账号菜单里能看到邀请码', !!accSheetH && accSheetH.innerHTML.indexOf(code) >= 0, code);
+    click(d, '#modalRoot .mask'); await wait(50);
+
+    /* 换人：退出后带邀请码注册 */
+    click(d, '#btnAccount'); await wait(60);
+    click(d, '[data-act="logout"]'); await wait(130);
+    click(d, '[data-act="authNew"]'); await wait(60);
+    q(d, '#rgName').value = '室友';
+    q(d, '#rgCode').value = code;
+    q(d, '#rgPw').value = 'mate2026';
+    q(d, '#rgPw2').value = 'mate2026';
+    submit(d, '#rgForm'); await wait(480);
+
+    const accs = JSON.parse(dump(dom).roomies_accounts || '[]');
+    const mate = accs.filter(a => a.name === '室友')[0];
+    check('第二个账号创建成功', accs.length === 2, accs.map(a => a.name).join(','));
+    check('室友账号指向屋主的数据空间', !!mate && mate.houseOwnerId === owner.id, mate && mate.houseOwnerId);
+    check('室友记录了自己的成员 id', !!mate && !!mate.memberId, mate && mate.memberId);
+    const shared = JSON.parse(dump(dom)['roomies_data_' + owner.id] || '{}');
+    check('屋主房屋里多了室友成员', (shared.members || []).length === 2, (shared.members || []).map(m => m.name).join(','));
+    check('两人看到同一间房屋', (shared.house || {}).inviteCode === code, (shared.house || {}).name);
+    check('室友进入后当前身份是自己', /室友/.test(q(d, '#houseSub').textContent), q(d, '#houseSub').textContent);
+    check('无运行时错误', errors.length === 0, errors.join(' | '));
+
+    /* 错误邀请码 */
+    click(d, '#btnAccount'); await wait(60);
+    click(d, '[data-act="logout"]'); await wait(130);
+    click(d, '[data-act="authNew"]'); await wait(60);
+    q(d, '#rgName').value = '陌生人';
+    q(d, '#rgCode').value = 'ZZZZZZ';
+    q(d, '#rgPw').value = 'stranger26';
+    q(d, '#rgPw2').value = 'stranger26';
+    submit(d, '#rgForm'); await wait(460);
+    check('错误邀请码被拒绝并提示', /邀请码无效/.test(txt(d)), '');
+    const accs3 = JSON.parse(dump(dom).roomies_accounts || '[]');
+    check('错误邀请码不会创建账号', accs3.length === 2, accs3.length + ' 个账号');
+  }
+
+  /* ---------- F. 交付物形态 ---------- */
+  console.log('\n===== F · 交付物形态 =====');
+  {
+    const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    check('根路径即完整客户端', /roomies_accounts/.test(html) && /authStage/.test(html));
+    check('是自包含单文件（无外链 JS/CSS）', !/src="[^"]*\.js"/.test(html) && !/href="[^"]*\.css"/.test(html));
+    check('无外部 CDN 依赖', !/(src|href)="https?:\/\//.test(html));
+    check('免登录 Demo 已移除', !fs.existsSync(path.join(__dirname, '..', 'app.html')));
+    check('体量合理（< 200KB）', html.length < 200000, Math.round(html.length / 1024) + ' KB');
   }
 
   console.log('\n' + '='.repeat(56));

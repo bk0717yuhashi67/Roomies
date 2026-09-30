@@ -1,5 +1,8 @@
 /* ============================================================
-   合租生活管家 · 回归与边界验证
+   合租生活管家 · 业务逻辑回归与边界验证
+   （针对 index.html —— 现在根路径就是带账号的客户端）
+   每个实例会预置一个「已登录账号」，直接进入主壳后测试业务逻辑。
+
    场景 A 基础回归（保证功能不退化）
    场景 B 数据迁移  v1(元) → v2(分)
    场景 C 数据损坏  必须备份而非静默重置
@@ -15,8 +18,49 @@ const path = require('path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
 const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const KEY = 'roomies_demo_v1';
+const KEY = 'roomies_data_t1';                 // 预置测试账号的数据键
+const ACC_KEY = 'roomies_accounts';
+const SESSION_KEY = 'roomies_session';
+const TEST_ACC = { id: 't1', name: '测试员', salt: 's', hash: 'weak:probe', hue: 200, glyph: '★', createdAt: 0, lastLoginAt: 0, houseOwnerId: 't1', memberId: 'm3', claimDemo: true };
 const URL_ = 'http://localhost:8080/';
+
+const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+/* 场景 A 用的默认房屋：3 位成员 + 一笔待确认账单，用来验证业务逻辑本身。
+   注意不能用演示种子（现在的空账号会得到空房屋），所以这里显式给一份。 */
+function defaultHouse() {
+  const ds = iso(new Date());
+  return JSON.stringify({
+    schemaVersion: 2,
+    house: { name: '安心小屋', inviteCode: 'TEST01' },
+    pactVersion: 'v1.2',
+    me: 'm3',
+    members: [
+      { id: 'm1', name: '小林', room: '主卧', weight: 1.2, joinedAt: ds },
+      { id: 'm2', name: '小周', room: '次卧', weight: 1.0, joinedAt: ds },
+      { id: 'm3', name: '小陈', room: '小卧', weight: 0.8, joinedAt: ds }
+    ],
+    bills: [{
+      id: 'b1', title: '电费 2026-09', category: '水电', amount: 28640, payerId: 'm1', rule: 'even',
+      participants: ['m1', 'm2', 'm3'], weightSnapshot: { m1: 1.2, m2: 1.0, m3: 0.8 },
+      shares: { m1: 9548, m2: 9546, m3: 9546 }, confirm: { m1: 'ok', m2: 'ok', m3: 'pending' },
+      status: 'confirming', date: ds, period: ds.slice(0, 7), version: 1,
+      dueAt: Date.now() + 3600000, createdAt: Date.now(), note: '抄表 1842 → 2214 kWh',
+      meter: null, history: []
+    }],
+    transfers: [], tasks: [], swaps: [],
+    items: [
+      { id: 'i1', name: '抽纸', category: '消耗品', stock: 0, safety: 2, restockQty: 6, unit: '包', purchaserId: 'm2', scope: 'all' },
+      { id: 'i2', name: '垃圾袋', category: '消耗品', stock: 36, safety: 10, restockQty: 60, unit: '只', purchaserId: 'm3', scope: 'all' }
+    ],
+    restocks: [], scoreLog: [], voucher: {},
+    pacts: [
+      { id: 'p1', text: '房租、水电、燃气按人头均摊', category: '费用与分摊', binding: 'M1 · 账单默认分摊方式', enforceable: true, rule: null },
+      { id: 'p6', text: '马桶圈用完放下', category: '卫生与清洁', binding: '仅靠自觉，系统无法约束', enforceable: false, rule: null }
+    ],
+    votes: [{ id: 'v1', text: '夏天空调统一设定为 26℃', support: ['m1', 'm2'], against: [], deadline: '2 天后截止', deadlineAt: Date.now() + 172800000, threshold: 2, closed: false }]
+  });
+}
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -35,9 +79,13 @@ function makeDom(seedValue, opts) {
   const dom = new JSDOM(HTML, Object.assign({
     runScripts: 'dangerously', pretendToBeVisual: true, url: URL_, virtualConsole: vc,
     beforeParse(window) {
-      if (seedValue !== undefined && seedValue !== null) {
-        try { window.localStorage.setItem(KEY, seedValue); } catch (e) { /* ignore */ }
-      }
+      try {
+        /* 预置一个已登录账号，跳过登录流程直接进入主壳 */
+        window.localStorage.setItem(ACC_KEY, JSON.stringify([TEST_ACC]));
+        window.localStorage.setItem(SESSION_KEY, 't1');
+        /* 未指定数据时给默认房屋；指定了就用指定的（用于迁移/损坏等场景） */
+        window.localStorage.setItem(KEY, (seedValue !== undefined && seedValue !== null) ? seedValue : defaultHouse());
+      } catch (e) { /* ignore */ }
     }
   }, opts || {}));
   return { dom, errors };
@@ -46,6 +94,16 @@ const q = (doc, s) => doc.querySelector(s);
 const viewOf = doc => (q(doc, '#view') || { innerHTML: '' }).innerHTML;
 const stored = dom => JSON.parse(dom.window.localStorage.getItem(KEY) || '{}');
 const click = (doc, sel) => { const el = q(doc, sel); if (!el) throw new Error('找不到元素: ' + sel); el.click(); };
+
+/* 切换当前身份：客户端把身份切换移进了账号菜单，这里走真实交互路径 */
+async function switchTo(doc, id) {
+  click(doc, '#btnAccount');
+  await wait(70);
+  const el = q(doc, '[data-act="switchMe"][data-id="' + id + '"]');
+  if (el) el.click();
+  else { const m = q(doc, '#modalRoot .mask'); if (m) m.click(); }
+  await wait(70);
+}
 
 /* ============================================================ */
 (async () => {
@@ -58,8 +116,14 @@ const click = (doc, sel) => { const el = q(doc, sel); if (!el) throw new Error('
     await wait(150);
     const view = q(doc, '#view');
     check('首屏渲染出内容', view && view.innerHTML.length > 400, view ? view.innerHTML.length + ' chars' : 'no #view');
-    check('身份选择器 3 位成员', doc.querySelectorAll('#whoami option').length === 3);
-    check('底部导航 5 个 tab', doc.querySelectorAll('#tabs .tab').length === 5);
+    check('底部导航 5 个 tab', doc.querySelectorAll('#tabbar .tab').length === 5);
+    /* 客户端把身份切换放进了账号菜单（当前身份不显示切换按钮，故为 2 个） */
+    click(doc, '#btnAccount'); await wait(70);
+    const accSheet = q(doc, '#modalRoot .sheet');
+    check('账号菜单可切换身份（列出其他成员）',
+      !!accSheet && (accSheet.innerHTML.match(/data-act="switchMe"/g) || []).length === 2);
+    check('账号菜单显示当前身份', !!accSheet && /当前身份/.test(accSheet.innerHTML));
+    click(doc, '#modalRoot .mask'); await wait(50);
     check('首页有「待我处理」', /待我处理/.test(view.innerHTML));
     check('首页有待确认账单', /电费 2026-09/.test(view.innerHTML));
     check('首页有今日值日区块', /今日值日/.test(view.innerHTML));
@@ -76,8 +140,7 @@ const click = (doc, sel) => { const el = q(doc, sel); if (!el) throw new Error('
     click(doc, '#modalRoot .mask'); await wait(30);
     check('点击遮罩可关闭弹层', !q(doc, '#modalRoot .sheet'));
 
-    const who = q(doc, '#whoami');
-    who.value = 'm1'; who.dispatchEvent(new dom.window.Event('change')); await wait(40);
+    await switchTo(doc, 'm1');
     click(doc, '[data-act="tab"][data-id="home"]'); await wait(40);
     check('切换身份后首页刷新', /今日值日/.test(view.innerHTML) && /等待/.test(view.innerHTML));
     click(doc, '[data-act="tab"][data-id="bills"]'); await wait(40);
@@ -85,7 +148,7 @@ const click = (doc, sel) => { const el = q(doc, sel); if (!el) throw new Error('
     check('已确认者看不到确认按钮', !/确认这笔账/.test(q(doc, '#modalRoot .sheet').innerHTML));
     click(doc, '#modalRoot .mask'); await wait(30);
 
-    who.value = 'm3'; who.dispatchEvent(new dom.window.Event('change')); await wait(40);
+    await switchTo(doc, 'm3');
     click(doc, '[data-act="tab"][data-id="bills"]'); await wait(40);
     click(doc, '[data-act="bill"]'); await wait(40);
     click(doc, '[data-act="ok"]'); await wait(50);
@@ -291,13 +354,12 @@ const click = (doc, sel) => { const el = q(doc, sel); if (!el) throw new Error('
   /* ---------- 汇总 ---------- */
   console.log('\n' + '='.repeat(56));
   console.log('通过 ' + pass + ' 项，失败 ' + fail + ' 项');
-  if (fail) {
-    console.log('失败清单：\n  · ' + fails.join('\n  · '));
-    process.exitCode = 1;
-  } else {
-    console.log('全部通过 ✅');
-  }
+  if (fail) console.log('失败清单：\n  · ' + fails.join('\n  · '));
+  else console.log('全部通过 ✅');
+  /* 页面里有 setInterval（主题定时检查），jsdom 会保持事件循环活跃，
+     必须显式退出，否则进程挂住、stdout 被 SIGTERM 截断 */
+  process.exit(fail ? 1 : 0);
 })().catch(e => {
   console.error('验证脚本自身出错：', e);
-  process.exitCode = 2;
+  process.exit(2);
 });

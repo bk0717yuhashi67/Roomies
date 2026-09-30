@@ -3,224 +3,605 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light">
-<title>合租生活管家 · 可交互 Demo</title>
-<meta name="description" content="合租生活管家：费用AA分摊、清洁值日排班、公共物品登记、室友公约，一个能在浏览器里直接操作的最小可用原型。">
+<meta name="color-scheme" content="light dark">
+<title>合租生活管家 · 客户端</title>
+<meta name="description" content="合租生活管家客户端：同一屋檐下的白天与夜晚。费用分摊、清洁值日、公共物品、室友公约。">
 <style>
+/* ============================================================
+   设计令牌 —— 晴天 / 夜空 双主题
+   切换机制：data-theme="day" | "night"，由时间自动决定并可手动覆盖
+   ============================================================ */
 :root{
-  --bg:#F1F4F2;
-  --surface:#FFFFFF;
-  --surface-2:#F8FAF9;
-  --ink:#14211D;
-  --ink-2:#3E5049;
-  --ink-3:#77887F;
-  --line:#E2E8E4;
-  --line-2:#EEF2EF;
-  --primary:#1E7A63;
-  --primary-2:#2A9C80;
-  --primary-soft:#E6F3EF;
-  --accent:#C9761F;
-  --accent-soft:#FBF0E1;
-  --blue:#2B6CB0;
-  --blue-soft:#E9F1F9;
-  --red:#B84C43;
-  --red-soft:#FAEBE9;
-  --radius:14px;
-  --radius-sm:10px;
-  --shadow:0 1px 2px rgba(20,33,29,.05), 0 10px 26px -16px rgba(20,33,29,.22);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 130ms;
+  --dur-fast: 180ms;
+  --dur-base: 240ms;
+  --r-sm: 12px; --r-md: 18px; --r-lg: 24px; --r-xl: 30px;
 }
+
+/* ---------- 晴天（白天） ---------- */
+:root, [data-theme="day"]{
+  --sky-1:#BEE4F7; --sky-2:#DCEEF8; --sky-3:#FFF7E8; --sky-4:#FFEEDA;
+  --deco-cloud: rgba(255,255,255,.92);
+  --deco-cloud-sh: rgba(120,160,200,.20);
+  --sun-core:#FFF3C4; --sun-mid:#FFC24B; --sun-edge:#FF9F43; --sun-glow:rgba(255,183,77,.45);
+  --ink:#16273A; --ink-2:#41566B; --ink-3:#7B8FA3; --ink-4:#A9BCCB;
+  --glass: rgba(255,255,255,.58);
+  --glass-strong: rgba(255,255,255,.78);
+  --glass-brd: rgba(255,255,255,.85);
+  --glass-in: rgba(255,255,255,.75);
+  --glass-sh: 0 10px 34px -12px rgba(31,68,102,.30);
+  --primary:#2E8BC0; --primary-2:#4FA8D8; --primary-soft:rgba(46,139,192,.12);
+  --accent:#F2921D; --accent-soft:rgba(242,146,29,.14);
+  --good:#2E9E6B; --good-soft:rgba(46,158,107,.14);
+  --warn:#D9822B; --warn-soft:rgba(217,130,43,.15);
+  --bad:#D0503F; --bad-soft:rgba(208,80,63,.13);
+  --line: rgba(22,39,58,.10);
+  --line-2: rgba(22,39,58,.06);
+  --scrim: rgba(22,39,58,.34);
+  --shadow-lift: 0 18px 40px -22px rgba(31,68,102,.55);
+}
+/* ---------- 夜空（夜晚） ---------- */
+[data-theme="night"]{
+  --sky-1:#070B1A; --sky-2:#111A33; --sky-3:#1B2748; --sky-4:#2A2145;
+  --deco-cloud: rgba(180,200,235,.14);
+  --deco-cloud-sh: rgba(0,0,0,.30);
+  --moon-core:#FFFDF3; --moon-edge:#E8DDAF; --moon-glow:rgba(255,246,205,.34);
+  --ink:#EEF3FF; --ink-2:#B7C6E2; --ink-3:#7E90B4; --ink-4:#5A6B8C;
+  --glass: rgba(255,255,255,.075);
+  --glass-strong: rgba(255,255,255,.12);
+  --glass-brd: rgba(255,255,255,.16);
+  --glass-in: rgba(255,255,255,.22);
+  --glass-sh: 0 10px 34px -12px rgba(0,0,0,.60);
+  --primary:#7BB6F0; --primary-2:#9CCBF7; --primary-soft:rgba(123,182,240,.16);
+  --accent:#FFD97D; --accent-soft:rgba(255,217,125,.16);
+  --good:#5FD3A0; --good-soft:rgba(95,211,160,.16);
+  --warn:#FFB35C; --warn-soft:rgba(255,179,92,.16);
+  --bad:#FF8A7A; --bad-soft:rgba(255,138,122,.16);
+  --line: rgba(255,255,255,.12);
+  --line-2: rgba(255,255,255,.07);
+  --scrim: rgba(3,6,15,.62);
+  --shadow-lift: 0 18px 40px -22px rgba(0,0,0,.9);
+}
+
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
-  margin:0;background:var(--bg);color:var(--ink);
+  margin:0; min-height:100dvh; color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
-  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased;
+  background:linear-gradient(170deg,var(--sky-1) 0%,var(--sky-2) 42%,var(--sky-3) 78%,var(--sky-4) 100%);
+  background-attachment:fixed;
+  transition:color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+  overflow-x:hidden;
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
-
-.app{max-width:760px;margin:0 auto;background:var(--bg);min-height:100dvh;display:flex;flex-direction:column}
-
-/* ---------- top ---------- */
-.top{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 18px 10px}
-.top-r{display:flex;align-items:center;gap:10px;justify-content:space-between}
-.brand{font-size:15px;font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
-.brand i{width:9px;height:9px;border-radius:50%;background:var(--primary);display:block}
-.badge{font-size:10.5px;font-weight:700;background:var(--primary-soft);color:#13604E;border-radius:99px;padding:2px 8px;letter-spacing:.03em}
-.top-hint{font-size:11.5px;color:var(--ink-3);margin:7px 0 0}
-.who{display:flex;align-items:center;gap:8px;margin-top:9px}
-.who label{font-size:12px;color:var(--ink-3);white-space:nowrap}
-.who select{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);font-size:13.5px;font-weight:600}
-
-/* ---------- tabs ---------- */
-.tabs{position:sticky;top:0;z-index:20;display:flex;background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{flex:1 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:none;border:none;border-bottom:2px solid transparent;font-size:13.5px;color:var(--ink-3);font-weight:600;white-space:nowrap;transition:color .15s,background .15s,border-color .15s}
-.tab:hover{color:var(--ink-2);background:var(--surface-2)}
-.tab.on{color:var(--primary);border-bottom-color:var(--primary);background:var(--primary-soft)}
-.tab svg{width:15px;height:15px;flex:0 0 auto;stroke-width:1.9}
-.tab .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:2px;border-radius:99px;background:var(--accent);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
-
-/* ---------- view ---------- */
-.view{flex:1;padding:16px 18px 40px}
-.sec{margin-bottom:20px}
-.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 9px}
-.sec-h h2{margin:0;font-size:14px;font-weight:800;letter-spacing:.01em;display:flex;align-items:center;gap:7px}
-.sec-h h2::before{content:"";width:3px;height:13px;border-radius:2px;background:var(--primary);flex:0 0 auto}
-.sec-h span{font-size:12px;color:var(--ink-3)}
-
-/* ---------- card ---------- */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow);margin-bottom:10px}
-.card.tint{background:var(--primary-soft);border-color:#CFE6DF}
-.card.warn{background:var(--accent-soft);border-color:#F0DCBC}
-.card.alert{background:var(--red-soft);border-color:#F0CFCB}
-.card.tap{cursor:pointer;transition:transform .14s,box-shadow .18s,border-color .18s}
-.card.tap:hover{transform:translateY(-2px);border-color:#C9E2DA;box-shadow:0 10px 26px -16px rgba(20,33,29,.38)}
-.card.tap:active{transform:translateY(0);box-shadow:var(--shadow)}
-.cr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.cr h3{margin:0;font-size:14.5px;font-weight:700;line-height:1.4}
-.cr p{margin:3px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
-.cr .amt{font-size:15px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
-.big{font-size:26px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
-.muted{color:var(--ink-3)}
-.sub{font-size:12.5px;color:var(--ink-3);margin:4px 0 0}
-
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;white-space:nowrap;line-height:1.6;background:#EDF1EF;color:var(--ink-3)}
-.pill.g{background:#D6EDE5;color:#13604E}
-.pill.o{background:#F7E4C9;color:#8A4E0E}
-.pill.r{background:#F7DEDA;color:#8E372F}
-.pill.b{background:#DCE8F5;color:#1F4F80}
-
-.rowlist{display:flex;flex-direction:column}
-.rowitem{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line-2);font-size:13.5px}
-.rowitem:last-child{border-bottom:none}
-.rowitem .nm{flex:1;min-width:0;display:flex;align-items:center;gap:7px}
-.rowitem .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-.av{width:22px;height:22px;border-radius:50%;background:var(--primary-soft);color:#13604E;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-
-.bar{height:7px;border-radius:5px;background:#EDF1EF;overflow:hidden;margin-top:8px}
-.bar i{display:block;height:100%;background:var(--primary);border-radius:5px}
-.bar i.o{background:var(--accent)}
-.bar i.r{background:var(--red)}
-
-/* ---------- buttons：三级主次 ---------- */
-/* ① 主操作：一屏只应有一个 —— 实心渐变 + 投影，视觉权重最高 */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:11px;border:1px solid transparent;background:linear-gradient(180deg,var(--primary-2),var(--primary));color:#fff;font-size:13.5px;font-weight:700;transition:transform .12s,box-shadow .18s,filter .18s;box-shadow:0 4px 12px -6px rgba(30,122,99,.75)}
-.btn:hover{filter:brightness(1.06);box-shadow:0 7px 18px -7px rgba(30,122,99,.85)}
-.btn:active{transform:scale(.97);box-shadow:0 2px 6px -4px rgba(30,122,99,.7)}
-/* ② 次操作：描边、无投影 —— 权重明显低于主操作 */
-.btn.ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line);box-shadow:none;font-weight:600}
-.btn.ghost:hover{background:var(--surface-2);border-color:#C9D6D0;box-shadow:none;filter:none}
-.btn.ghost:active{transform:scale(.97);box-shadow:none}
-/* ③ 弱操作：纯文字（关闭 / 取消）—— 不参与视觉竞争 */
-.btn.link{background:none;color:var(--ink-3);box-shadow:none;padding:8px 12px;font-weight:600}
-.btn.link:hover{background:var(--surface-2);color:var(--ink-2);box-shadow:none;filter:none}
-.btn.link:active{transform:none}
-/* ④ 破坏性操作：语义明确但不抢眼 */
-.btn.danger{background:var(--surface);color:var(--red);border-color:#F0CFCB;box-shadow:none;font-weight:600}
-.btn.danger:hover{background:var(--red-soft);border-color:#E6BAB5;box-shadow:none;filter:none}
-.btn.wide{width:100%}
-.btn.sm{padding:7px 14px;font-size:12.5px;border-radius:9px}
-.btn.lg{padding:12px 22px;font-size:14.5px;border-radius:12px}
-.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
-.btnrow{display:flex;gap:8px;margin-top:12px}
-.btnrow > .btn{flex:1}
-/* 主次并排：主按钮占得更宽，视线自然落上去 */
-.btnrow.pri{display:grid;grid-template-columns:1.7fr 1fr}
-
-/* ---------- form ---------- */
-.field{margin-bottom:12px}
-.field label{display:block;font-size:12px;color:var(--ink-3);font-weight:700;margin-bottom:5px}
-.field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:14px}
-.field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
-.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width:520px){.f2{grid-template-columns:1fr}}
-
-/* ---------- preview ---------- */
-.preview{background:var(--surface-2);border:1px dashed #CFE0D9;border-radius:var(--radius-sm);padding:12px 13px;margin:4px 0 12px}
-.preview .ph{font-size:11.5px;font-weight:800;color:var(--primary);letter-spacing:.04em;margin-bottom:7px}
-
-/* ---------- checklist ---------- */
-.chk{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:13.5px;color:var(--ink-2)}
-.chk input{margin:3px 0 0;width:15px;height:15px;accent-color:var(--primary);flex:0 0 auto}
-.chk.done span{text-decoration:line-through;color:var(--ink-3)}
-
-/* ---------- link ---------- */
-.doclink{display:block;text-align:center;font-size:12.5px;color:var(--ink-3);padding:14px 18px 26px;text-decoration:none}
-.doclink:hover{color:var(--primary)}
+button{cursor:pointer;background:none;border:none}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:8px}
 a{color:var(--primary)}
 
-/* ---------- modal ---------- */
-.mask{position:fixed;inset:0;background:rgba(20,33,29,.42);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0}
-.sheet{background:var(--surface);width:100%;max-width:760px;border-radius:18px 18px 0 0;padding:20px 20px 26px;max-height:90dvh;overflow-y:auto;animation:up .22s ease-out}
-@keyframes up{from{transform:translateY(18px);opacity:.6}to{transform:none;opacity:1}}
-.sheet h3{margin:0 0 4px;font-size:17px}
-.sheet .sh-sub{margin:0 0 16px;font-size:12.5px;color:var(--ink-3)}
-@media (min-width:600px){.mask{align-items:center;padding:24px}.sheet{border-radius:18px;max-height:82dvh}}
+/* ============================================================
+   天空装饰层 —— 太阳 / 月亮 / 云 / 星星 / 流星
+   全部只动 transform 与 opacity
+   ============================================================ */
+.sky{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.sky > *{position:absolute;will-change:transform,opacity}
 
-/* ---------- toast ---------- */
-.toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:var(--ink);color:#fff;font-size:13.5px;font-weight:600;padding:11px 20px;border-radius:99px;z-index:90;opacity:0;pointer-events:none;transition:.22s;box-shadow:0 10px 30px -10px rgba(0,0,0,.4);max-width:82vw;text-align:center}
+/* 太阳 */
+.sun{
+  width:92px;height:92px;border-radius:50%;right:8%;top:7%;
+  background:radial-gradient(circle at 38% 34%, var(--sun-core), var(--sun-mid) 62%, var(--sun-edge));
+  box-shadow:0 0 64px 20px var(--sun-glow), 0 0 120px 46px var(--sun-glow);
+  animation:sunBreathe 7s var(--ease-in-out) infinite;
+}
+.sun::before{
+  content:"";position:absolute;inset:-34px;border-radius:50%;
+  background:conic-gradient(from 0deg, transparent 0 12deg, var(--sun-glow) 15deg 18deg, transparent 21deg 30deg);
+  mask:radial-gradient(circle, transparent 46%, #000 48%, #000 62%, transparent 64%);
+  -webkit-mask:radial-gradient(circle, transparent 46%, #000 48%, #000 62%, transparent 64%);
+  animation:spin 60s linear infinite;
+}
+@keyframes sunBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 月亮 */
+.moon{
+  width:78px;height:78px;border-radius:50%;right:9%;top:8%;
+  background:radial-gradient(circle at 34% 30%, var(--moon-core), var(--moon-edge) 68%, #C9BE92);
+  box-shadow:0 0 50px 14px var(--moon-glow), inset -14px -10px 22px rgba(150,140,105,.42);
+  animation:moonFloat 9s var(--ease-in-out) infinite;
+}
+.moon::after{
+  content:"";position:absolute;left:16%;top:52%;width:14px;height:14px;border-radius:50%;
+  background:rgba(190,180,140,.30);box-shadow:22px -20px 0 -4px rgba(190,180,140,.22);
+}
+@keyframes moonFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* 云 */
+.cloud{width:118px;height:36px;border-radius:40px;background:var(--deco-cloud);box-shadow:0 8px 26px var(--deco-cloud-sh)}
+.cloud::before,.cloud::after{content:"";position:absolute;border-radius:50%;background:inherit}
+.cloud::before{width:54px;height:54px;top:-25px;left:16px}
+.cloud::after{width:38px;height:38px;top:-17px;left:58px}
+.cloud.c1{left:-140px;top:16%;animation:drift 46s linear infinite}
+.cloud.c2{left:-180px;top:34%;transform:scale(.72);opacity:.8;animation:drift 68s linear infinite 6s}
+.cloud.c3{left:-160px;top:8%;transform:scale(.52);opacity:.6;animation:drift 88s linear infinite 18s}
+@keyframes drift{to{transform:translateX(calc(100vw + 220px))}}
+
+/* 星星 */
+.stars{position:absolute;inset:0}
+.star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 6px 1px rgba(255,255,255,.7);animation:twinkle 4s var(--ease-in-out) infinite}
+.star.big{width:4px;height:4px}
+@keyframes twinkle{0%,100%{opacity:.22;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+
+/* 流星 */
+.meteor{
+  width:150px;height:2px;border-radius:2px;top:12%;left:-160px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.9));
+  filter:drop-shadow(0 0 6px rgba(255,255,255,.8));
+  opacity:0; animation:meteor 11s var(--ease-in-out) infinite 3s;
+}
+@keyframes meteor{
+  0%{opacity:0;transform:translate3d(0,0,0) rotate(18deg)}
+  6%{opacity:1}
+  22%{opacity:0;transform:translate3d(calc(100vw + 320px), 30vh, 0) rotate(18deg)}
+  100%{opacity:0;transform:translate3d(calc(100vw + 320px), 30vh, 0) rotate(18deg)}
+}
+
+/* 主题可见性：晴天才显示太阳与云，夜空才显示月亮与星 */
+.sky .sun,.sky .cloud{opacity:1;transition:opacity 520ms var(--ease)}
+.sky .moon,.sky .stars,.sky .meteor{opacity:0;transition:opacity 520ms var(--ease)}
+[data-theme="night"] .sky .sun,[data-theme="night"] .sky .cloud{opacity:0}
+[data-theme="night"] .sky .moon{opacity:1}
+[data-theme="night"] .sky .stars{opacity:1}
+[data-theme="night"] .sky .meteor{opacity:0;animation-name:meteor}
+
+/* 地平线微光 */
+.horizon{position:absolute;left:-10%;right:-10%;bottom:-12%;height:38%;border-radius:50% 50% 0 0;background:radial-gradient(ellipse at 50% 100%, var(--sun-glow), transparent 68%);opacity:.55;transition:opacity 520ms var(--ease)}
+[data-theme="night"] .horizon{background:radial-gradient(ellipse at 50% 100%, rgba(123,182,240,.28), transparent 70%);opacity:.7}
+
+/* ============================================================
+   液态玻璃
+   ============================================================ */
+.glass{
+  background:var(--glass);
+  backdrop-filter:blur(26px) saturate(185%);
+  -webkit-backdrop-filter:blur(26px) saturate(185%);
+  border:1px solid var(--glass-brd);
+  border-radius:var(--r-lg);
+  box-shadow:var(--glass-sh), inset 0 1px 0 var(--glass-in);
+}
+.glass.soft{border-radius:var(--r-md)}
+.glass.tight{border-radius:var(--r-sm)}
+/* 高光扫边：仅在 hover 时出现，避免静态时就"脏" */
+.glass.hi{position:relative;overflow:hidden}
+.glass.hi::after{
+  content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.34), transparent);
+  transform:skewX(-18deg);opacity:0;transition:opacity var(--dur-fast) var(--ease);
+}
+@media (hover:hover) and (pointer:fine){
+  .glass.hi:hover::after{opacity:1;animation:sheen 900ms var(--ease-out)}
+}
+@keyframes sheen{from{left:-60%}to{left:120%}}
+
+/* ============================================================
+   按钮 —— 全部带按压反馈
+   ============================================================ */
+/* 默认即主按钮 —— 旧渲染里大量写的是裸 .btn，必须自带背景与文字色 */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 20px;border-radius:14px;font-size:14px;font-weight:700;line-height:1.2;
+  border:1px solid transparent;position:relative;overflow:hidden;
+  background:linear-gradient(135deg, var(--primary-2), var(--primary) 55%, var(--primary-2));
+  background-size:200% 100%;color:#fff;
+  box-shadow:0 10px 26px -12px color-mix(in srgb, var(--primary) 90%, transparent), inset 0 1px 0 rgba(255,255,255,.34);
+  transition:transform var(--dur-press) var(--ease-out), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+}
+[data-theme="night"] .btn{color:#0B1026}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn[disabled]:active{transform:none}
+
+/* 主按钮：阳光/月光渐变 + 呼吸光晕 */
+.btn.primary{
+  color:#fff;
+  background:linear-gradient(135deg, var(--primary-2), var(--primary) 55%, var(--primary-2));
+  background-size:200% 100%;
+  box-shadow:0 10px 26px -12px color-mix(in srgb, var(--primary) 90%, transparent), inset 0 1px 0 rgba(255,255,255,.34);
+}
+[data-theme="night"] .btn.primary{color:#0B1026}
+@media (hover:hover) and (pointer:fine){
+  .btn.primary:hover{background-position:100% 0;box-shadow:0 14px 32px -12px color-mix(in srgb, var(--primary) 95%, transparent), inset 0 1px 0 rgba(255,255,255,.4)}
+}
+/* 强调按钮：太阳橙 */
+.btn.accent{
+  color:#fff;background:linear-gradient(135deg, #FFC24B, var(--accent) 60%, #E07C12);
+  box-shadow:0 10px 26px -12px rgba(242,146,29,.9), inset 0 1px 0 rgba(255,255,255,.4);
+}
+[data-theme="night"] .btn.accent{color:#2A1B00;background:linear-gradient(135deg, #FFE6A6, #FFD97D 55%, #E8B84A)}
+/* 玻璃按钮 */
+.btn.ghost{
+  background:var(--glass);border-color:var(--glass-brd);color:var(--ink-2);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:inset 0 1px 0 var(--glass-in);
+}
+@media (hover:hover) and (pointer:fine){.btn.ghost:hover{background:var(--glass-strong);color:var(--ink)}}
+/* 文字按钮 */
+.btn.link{background:none;color:var(--ink-3);font-weight:600;padding:9px 12px}
+@media (hover:hover) and (pointer:fine){.btn.link:hover{color:var(--ink-2);background:var(--line-2)}}
+.btn.link:active{transform:none}
+/* 危险 */
+.btn.danger{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb, var(--bad) 30%, transparent)}
+.btn.wide{width:100%}
+.btn.sm{padding:8px 14px;font-size:13px;border-radius:11px}
+.btn.lg{padding:14px 26px;font-size:15px;border-radius:16px}
+.btnrow{display:flex;gap:9px;margin-top:12px}
+.btnrow > .btn{flex:1}
+.btnrow.pri{display:grid;grid-template-columns:1.7fr 1fr}
+
+/* ============================================================
+   Logo
+   ============================================================ */
+.logo{width:52px;height:52px;flex:0 0 auto;position:relative}
+.logo svg{width:100%;height:100%;display:block;overflow:visible}
+.logo .halo{animation:spin 34s linear infinite;transform-origin:50% 50%}
+.logo .ray{opacity:.9;transition:opacity 520ms var(--ease)}
+.logo .stars-mini circle{animation:twinkle 3.6s var(--ease-in-out) infinite}
+.logo .stars-mini circle:nth-child(2){animation-delay:.9s}
+.logo .stars-mini circle:nth-child(3){animation-delay:1.8s}
+[data-theme="night"] .logo .ray{opacity:.35}
+.logo.lg{width:78px;height:78px}
+.logo.sm{width:34px;height:34px}
+
+/* ============================================================
+   布局
+   ============================================================ */
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 20px}
+.center-stage{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:44px 20px}
+.stage{width:100%;max-width:820px}
+
+/* 标题区 */
+.brand-hero{text-align:center;margin-bottom:30px}
+.brand-hero .logo{margin:0 auto 16px}
+.brand-hero h1{margin:0;font-size:29px;font-weight:800;letter-spacing:-.6px}
+.brand-hero p{margin:8px 0 0;color:var(--ink-3);font-size:14px}
+.brand-hero .tag{display:inline-block;margin-top:12px;padding:5px 14px;border-radius:999px;font-size:12.5px;font-weight:600;background:var(--glass);border:1px solid var(--glass-brd);color:var(--ink-2);backdrop-filter:blur(12px)}
+
+/* ============================================================
+   账号卡片选择器
+   ============================================================ */
+.acct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:14px}
+.acct{
+  position:relative;padding:20px 14px 16px;border-radius:var(--r-md);text-align:center;
+  background:var(--glass);border:1px solid var(--glass-brd);
+  backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+  box-shadow:var(--glass-sh), inset 0 1px 0 var(--glass-in);
+  transition:transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease), border-color var(--dur-fast) var(--ease);
+  animation:popIn 420ms var(--ease-out) backwards;
+}
+@keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+.acct:active{transform:scale(.975)}
+@media (hover:hover) and (pointer:fine){
+  .acct:hover{transform:translateY(-5px);box-shadow:var(--shadow-lift), inset 0 1px 0 var(--glass-in);border-color:color-mix(in srgb, var(--primary) 42%, var(--glass-brd))}
+}
+.acct .ava{
+  width:60px;height:60px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:23px;font-weight:800;color:#fff;position:relative;
+  box-shadow:0 8px 22px -10px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.35);
+}
+.acct .ava .badge{position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--glass-strong);backdrop-filter:blur(8px);border:1px solid var(--glass-brd);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1}
+.acct .nm{font-size:15px;font-weight:700;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct .mt{font-size:11.5px;color:var(--ink-3);margin:3px 0 0}
+.acct .del{position:absolute;top:7px;right:7px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink-3);background:var(--line-2);opacity:0;transition:opacity var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
+@media (hover:hover) and (pointer:fine){.acct:hover .del{opacity:1}}
+.acct .del:hover{color:var(--bad);background:var(--bad-soft)}
+.acct.new{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:152px;border-style:dashed;border-color:color-mix(in srgb, var(--primary) 40%, transparent);color:var(--primary)}
+.acct.new .plus{width:52px;height:52px;border-radius:50%;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:400;margin-bottom:10px;transition:transform var(--dur-base) var(--ease-out)}
+@media (hover:hover) and (pointer:fine){.acct.new:hover .plus{transform:rotate(90deg) scale(1.06)}}
+
+/* ============================================================
+   表单
+   ============================================================ */
+.field{margin-bottom:14px;position:relative}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-3);margin-bottom:6px}
+.field input,.field select,.field textarea{
+  width:100%;padding:12px 14px;border-radius:14px;font-size:15px;
+  background:var(--glass);border:1px solid var(--glass-brd);color:var(--ink);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transition:border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.field input::placeholder{color:var(--ink-4)}
+.field input:focus,.field select:focus,.field textarea:focus{
+  outline:none;border-color:var(--primary);background:var(--glass-strong);
+  box-shadow:0 0 0 4px var(--primary-soft);
+}
+.field .err{color:var(--bad);font-size:12.5px;margin-top:6px;display:none}
+.field.bad input{border-color:var(--bad);box-shadow:0 0 0 4px var(--bad-soft)}
+.field.bad .err{display:block}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:560px){.f2{grid-template-columns:1fr}}
+
+/* 密码强度 */
+.pw-meter{display:flex;gap:5px;margin-top:8px}
+.pw-meter i{flex:1;height:4px;border-radius:3px;background:var(--line);transition:background var(--dur-fast) var(--ease)}
+
+/* ============================================================
+   主壳
+   ============================================================ */
+.shell{position:relative;z-index:1;min-height:100dvh;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:0;z-index:30;padding:11px 0;
+  background:color-mix(in srgb, var(--sky-2) 55%, transparent);
+  backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+  border-bottom:1px solid var(--line);
+}
+.topbar .inner{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:12px}
+.topbar .logo{width:38px;height:38px}
+.topbar .t-name{font-size:15px;font-weight:800;letter-spacing:-.2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .t-sub{font-size:11.5px;color:var(--ink-3);margin-top:-2px}
+.topbar .spacer{flex:1}
+.icon-btn{
+  width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  background:var(--glass);border:1px solid var(--glass-brd);color:var(--ink-2);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transition:transform var(--dur-press) var(--ease-out), background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.icon-btn:active{transform:scale(.94)}
+@media (hover:hover) and (pointer:fine){.icon-btn:hover{background:var(--glass-strong);color:var(--ink)}}
+.icon-btn svg{width:19px;height:19px}
+.icon-btn .sun-ico{display:none}
+[data-theme="night"] .icon-btn .sun-ico{display:block}
+[data-theme="night"] .icon-btn .moon-ico{display:none}
+
+.stage-inner{flex:1;max-width:1180px;width:100%;margin:0 auto;padding:18px 20px 96px}
+
+/* 底部导航 */
+.tabbar{
+  position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;
+  display:flex;gap:4px;padding:7px;border-radius:22px;
+  background:var(--glass-strong);border:1px solid var(--glass-brd);
+  backdrop-filter:blur(26px) saturate(190%);-webkit-backdrop-filter:blur(26px) saturate(190%);
+  box-shadow:var(--glass-sh), inset 0 1px 0 var(--glass-in);
+  max-width:calc(100vw - 28px);
+}
+.tabbar .tab{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 14px;border-radius:16px;font-size:10.5px;font-weight:700;color:var(--ink-3);
+  transition:color var(--dur-fast) var(--ease), transform var(--dur-press) var(--ease-out);
+}
+.tabbar .tab:active{transform:scale(.94)}
+.tabbar .tab svg{width:20px;height:20px}
+.tabbar .tab .pill{position:absolute;inset:0;border-radius:16px;background:var(--primary-soft);opacity:0;transform:scale(.86);transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out)}
+.tabbar .tab.on{color:var(--primary)}
+.tabbar .tab.on .pill{opacity:1;transform:scale(1)}
+.tabbar .tab > *{position:relative;z-index:1}
+.tabbar .cnt{position:absolute;top:2px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--accent);color:#fff;font-size:9.5px;font-weight:800;line-height:16px;text-align:center;z-index:2}
+[data-theme="night"] .tabbar .cnt{color:#2A1B00}
+
+/* ============================================================
+   内容块
+   ============================================================ */
+.sec{margin-bottom:18px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding-left:2px}
+.sec-h h2{margin:0;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
+.sec-h h2::before{content:"";width:3px;height:14px;border-radius:2px;background:linear-gradient(var(--primary-2),var(--primary))}
+.sec-h .more{font-size:12px;color:var(--ink-3)}
+
+.card{
+  padding:16px 18px;margin-bottom:11px;position:relative;
+  background:var(--glass);
+  backdrop-filter:blur(22px) saturate(185%);-webkit-backdrop-filter:blur(22px) saturate(185%);
+  border:1px solid var(--glass-brd);border-radius:var(--r-lg);
+  box-shadow:var(--glass-sh), inset 0 1px 0 var(--glass-in);
+}
+.card.tap{cursor:pointer}
+.card .cr{display:flex;align-items:flex-start;gap:12px}
+/* 旧渲染里 .cr 的第一个子元素常常是没有类名的 div，必须补 flex */
+.card .cr > div{flex:1;min-width:0}
+.card .cr .blk{flex:1;min-width:0}
+.card h3{margin:0;font-size:15px;font-weight:700;line-height:1.45}
+.card p{margin:4px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.55}
+.card .amt{font-size:16px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.card .cr > .tag,.card .cr > .pill,.card .cr > .tico{flex:0 0 auto}
+
+/* 图标块 */
+.ico{width:38px;height:38px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:16px;font-weight:800;position:relative}
+.ico svg{width:19px;height:19px}
+.ico.money{background:var(--primary-soft);color:var(--primary)}
+.ico.shift{background:var(--good-soft);color:var(--good)}
+.ico.item{background:var(--accent-soft);color:var(--accent)}
+.ico.pact{background:var(--primary-soft);color:var(--primary)}
+.ico.warn{background:var(--warn-soft);color:var(--warn)}
+
+/* 标签 */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;background:var(--line-2);color:var(--ink-3)}
+.tag.g{background:var(--good-soft);color:var(--good)}
+.tag.o{background:var(--warn-soft);color:var(--warn)}
+.tag.r{background:var(--bad-soft);color:var(--bad)}
+.tag.b{background:var(--primary-soft);color:var(--primary)}
+
+/* 概览卡（首页视觉重心） */
+.hero-card{padding:22px;position:relative;overflow:hidden;margin-bottom:18px}
+.hero-card .glow{position:absolute;right:-50px;top:-60px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle, var(--sun-glow), transparent 66%);pointer-events:none}
+[data-theme="night"] .hero-card .glow{background:radial-gradient(circle, var(--moon-glow), transparent 66%)}
+.hero-card .lbl{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.04em;position:relative}
+.hero-card .num{font-size:38px;font-weight:800;letter-spacing:-1.4px;line-height:1.12;margin:4px 0 2px;font-variant-numeric:tabular-nums;position:relative}
+.hero-card .note{font-size:12.5px;color:var(--ink-3);position:relative}
+.hero-stats{display:flex;gap:10px;margin-top:18px;position:relative}
+.hstat{flex:1;padding:11px 12px;border-radius:var(--r-sm);background:var(--glass);border:1px solid var(--glass-brd);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hstat b{display:block;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.3}
+.hstat span{font-size:11px;color:var(--ink-3)}
+
+/* 空状态 */
+.empty{text-align:center;padding:38px 18px;color:var(--ink-3);font-size:13.5px}
+.empty .em{width:64px;height:64px;margin:0 auto 14px;border-radius:22px;background:var(--glass);border:1px solid var(--glass-brd);display:flex;align-items:center;justify-content:center;font-size:27px;backdrop-filter:blur(14px);animation:floaty 5s var(--ease-in-out) infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.empty b{display:block;color:var(--ink-2);font-size:15px;margin-bottom:6px}
+
+/* ============================================================
+   弹层
+   ============================================================ */
+.mask{position:fixed;inset:0;z-index:60;background:var(--scrim);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn var(--dur-fast) var(--ease-out)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:100%;max-width:560px;max-height:92dvh;overflow-y:auto;
+  padding:22px 20px 26px;border-radius:var(--r-xl) var(--r-xl) 0 0;
+  background:var(--glass-strong);border:1px solid var(--glass-brd);border-bottom:none;
+  backdrop-filter:blur(30px) saturate(190%);-webkit-backdrop-filter:blur(30px) saturate(190%);
+  box-shadow:0 -14px 44px -18px rgba(0,0,0,.45), inset 0 1px 0 var(--glass-in);
+  animation:sheetUp 300ms var(--ease-drawer);
+}
+@keyframes sheetUp{from{transform:translateY(26px);opacity:.7}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 5px;font-size:18px;display:flex;align-items:center;gap:9px}
+.sheet .sh-sub{margin:0 0 18px;font-size:12.5px;color:var(--ink-3)}
+@media (min-width:620px){.mask{align-items:center;padding:26px}.sheet{border-radius:var(--r-xl);border-bottom:1px solid var(--glass-brd);max-height:84dvh}}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:96px;transform:translate(-50%,14px);z-index:90;
+  padding:12px 22px;border-radius:999px;font-size:13.5px;font-weight:700;
+  background:var(--glass-strong);border:1px solid var(--glass-brd);color:var(--ink);
+  backdrop-filter:blur(22px) saturate(190%);-webkit-backdrop-filter:blur(22px) saturate(190%);
+  box-shadow:var(--glass-sh);opacity:0;pointer-events:none;max-width:82vw;text-align:center;
+  transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
-/* ---------- misc ---------- */
-.empty{text-align:center;padding:36px 16px;color:var(--ink-3);font-size:13.5px}
-.empty b{display:block;color:var(--ink-2);font-size:15px;margin-bottom:6px}
-.empty .em-ico{width:58px;height:58px;margin:0 auto 14px;border-radius:20px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;font-size:25px;color:var(--primary);font-weight:700}
+/* 隐身/工具 */
+.hide{display:none !important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--ink-3)}
+.sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 0}
+.divide{height:1px;background:var(--line-2);margin:14px 0}
+.rowitem{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line-2);font-size:13.5px}
+.rowitem:last-child{border-bottom:none}
+.rowitem .nm{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.rowitem .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-/* ---------- 首页概览卡（视觉重心） ---------- */
-.hero{position:relative;overflow:hidden;border-radius:16px;padding:18px;margin-bottom:18px;color:#fff;background:linear-gradient(135deg,#1E7A63 0%,#2A9C80 58%,#3FB394 100%);box-shadow:0 14px 32px -20px rgba(30,122,99,.95)}
-.hero::after{content:"";position:absolute;right:-42px;top:-52px;width:164px;height:164px;border-radius:50%;background:rgba(255,255,255,.10)}
-.hero::before{content:"";position:absolute;right:24px;bottom:-62px;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.07)}
-.hero > *{position:relative}
-.hero .h-lbl{font-size:12px;opacity:.84;font-weight:600;letter-spacing:.05em}
-.hero .h-num{font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.16;margin:3px 0;font-variant-numeric:tabular-nums}
-.hero .h-note{font-size:12.5px;opacity:.86}
-.hero .h-stats{display:flex;gap:8px;margin-top:15px}
-.hero .h-stat{flex:1;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:11px;padding:9px 11px}
-.hero .h-stat b{display:block;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.32}
-.hero .h-stat span{font-size:11px;opacity:.85}
-.hero .h-acts{display:flex;gap:8px;margin-top:15px}
-.hero .btn{flex:1}
-.hero .btn.on-hero{background:#fff;color:#14624F;box-shadow:0 8px 18px -10px rgba(0,0,0,.55)}
-.hero .btn.on-hero:hover{background:#F1FBF7;filter:none}
-.hero .btn.on-hero-ghost{background:rgba(255,255,255,.17);color:#fff;border-color:rgba(255,255,255,.32);box-shadow:none}
-.hero .btn.on-hero-ghost:hover{background:rgba(255,255,255,.27);filter:none;box-shadow:none}
+/* ============================================================
+   兼容层 —— 复用既有渲染函数产出的类名，统一到新视觉
+   （渲染逻辑只有一份，两个页面行为一致）
+   ============================================================ */
+.card .cr-b{flex:1;min-width:0}
+.card.tint{background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 26%,var(--glass-brd))}
+.card.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 28%,var(--glass-brd))}
+.card.alert{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 30%,var(--glass-brd))}
+.card.tap{cursor:pointer;transition:transform var(--dur-base) var(--ease-out),box-shadow var(--dur-base) var(--ease),border-color var(--dur-fast) var(--ease)}
+@media (hover:hover) and (pointer:fine){.card.tap:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift)}}
+.card.tap:active{transform:scale(.985)}
 
-/* ---------- 卡片类型标识 ---------- */
-.tico{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:14px;font-weight:800;letter-spacing:0}
+.tico{width:38px;height:38px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:16px;font-weight:800}
 .tico.money{background:var(--primary-soft);color:var(--primary)}
-.tico.shift{background:var(--blue-soft);color:var(--blue)}
+.tico.shift{background:var(--good-soft);color:var(--good)}
 .tico.item{background:var(--accent-soft);color:var(--accent)}
-.tico.pact{background:#F0EAF7;color:#7A5AA8}
-.tico.warn{background:var(--red-soft);color:var(--red)}
-.tico.sm-tico{width:24px;height:24px;border-radius:8px;font-size:11px}
-.card .cr.ico{gap:11px}
-.card .cr.ico .cr-b{flex:1;min-width:0}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grid2 .card{margin-bottom:0}
-.kvmini{font-size:12.5px;color:var(--ink-3);margin-top:8px;display:flex;flex-wrap:wrap;gap:10px}
-.divide{height:1px;background:var(--line-2);margin:12px 0}
+.tico.pact{background:var(--primary-soft);color:var(--primary)}
+.tico.warn{background:var(--warn-soft);color:var(--warn)}
+.tico.sm-tico{width:26px;height:26px;border-radius:9px;font-size:11px}
+
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;background:var(--line-2);color:var(--ink-3)}
+.pill.g{background:var(--good-soft);color:var(--good)}
+.pill.o{background:var(--warn-soft);color:var(--warn)}
+.pill.r{background:var(--bad-soft);color:var(--bad)}
+.pill.b{background:var(--primary-soft);color:var(--primary)}
+
+/* 概览卡：旧类名 .hero 映射到新视觉 */
+.hero{padding:22px;position:relative;overflow:hidden;margin-bottom:18px;border-radius:var(--r-lg);background:var(--glass);border:1px solid var(--glass-brd);box-shadow:var(--glass-sh),inset 0 1px 0 var(--glass-in);backdrop-filter:blur(26px) saturate(185%);-webkit-backdrop-filter:blur(26px) saturate(185%)}
+.hero::after{content:"";position:absolute;right:-50px;top:-60px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,var(--sun-glow),transparent 66%);pointer-events:none}
+[data-theme="night"] .hero::after{background:radial-gradient(circle,var(--moon-glow),transparent 66%)}
+.hero > *{position:relative}
+.hero .h-lbl{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.04em}
+.hero .h-num{font-size:38px;font-weight:800;letter-spacing:-1.4px;line-height:1.12;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.hero .h-note{font-size:12.5px;color:var(--ink-3)}
+.hero .h-stats{display:flex;gap:10px;margin-top:18px}
+.hero .h-stat{flex:1;padding:11px 12px;border-radius:var(--r-sm);background:var(--glass);border:1px solid var(--glass-brd)}
+.hero .h-stat b{display:block;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.3}
+.hero .h-stat span{font-size:11px;color:var(--ink-3)}
+.hero .h-acts{display:flex;gap:9px;margin-top:16px}
+.hero .btn{flex:1}
+/* 概览卡上的按钮：旧渲染用的是 on-hero / on-hero-ghost */
+.hero .btn.on-hero{background:#fff;color:var(--primary);box-shadow:0 10px 24px -12px rgba(0,0,0,.45)}
+[data-theme="night"] .hero .btn.on-hero{background:rgba(255,255,255,.94);color:#0B1026}
+.hero .btn.on-hero-ghost{
+  background:var(--glass);border-color:var(--glass-brd);color:var(--ink-2);
+  box-shadow:inset 0 1px 0 var(--glass-in);font-weight:600;
+}
+
+.big{font-size:30px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.av{width:24px;height:24px;border-radius:50%;background:var(--primary-soft);color:var(--primary);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.bar{height:7px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:9px}
+.bar i{display:block;height:100%;border-radius:5px;background:var(--primary);transition:width 420ms var(--ease-out)}
+.bar i.o{background:var(--warn)}
+.bar i.r{background:var(--bad)}
+.rowlist{display:flex;flex-direction:column}
+.kvmini{font-size:12px;color:var(--ink-3);margin-top:9px;display:flex;flex-wrap:wrap;gap:10px}
+.preview{background:var(--line-2);border:1px dashed color-mix(in srgb,var(--primary) 34%,transparent);border-radius:var(--r-sm);padding:13px 14px;margin:6px 0 14px}
+.preview .ph{font-size:11.5px;font-weight:800;color:var(--primary);letter-spacing:.04em;margin-bottom:8px}
+.chk{display:flex;align-items:flex-start;gap:9px;padding:7px 0;font-size:13.5px;color:var(--ink-2)}
+.chk input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--primary);flex:0 0 auto}
+.empty .em-ico{width:64px;height:64px;margin:0 auto 14px;border-radius:22px;background:var(--glass);border:1px solid var(--glass-brd);display:flex;align-items:center;justify-content:center;font-size:27px;color:var(--primary);font-weight:700;animation:floaty 5s var(--ease-in-out) infinite}
+.linky{color:var(--primary);font-weight:700;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+
+/* ============================================================
+   可访问性
+   ============================================================ */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  .sky .star,.sky .meteor{opacity:.5 !important}
+}
 </style>
 </head>
 <body>
-<div class="app">
-  <header class="top">
-    <div class="top-r">
-      <div class="brand"><i></i>合租生活管家<span class="badge">Demo</span></div>
-      <button class="btn link sm" data-act="resetAsk" type="button">重置数据</button>
+
+<!-- 天空装饰层 -->
+<div class="sky" aria-hidden="true">
+  <div class="horizon"></div>
+  <div class="sun"></div>
+  <div class="moon"></div>
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+  <div class="stars" id="stars"></div>
+  <div class="meteor"></div>
+</div>
+
+<!-- 登录/注册 -->
+<div class="center-stage" id="authStage">
+  <div class="stage">
+    <div class="brand-hero">
+      <div class="logo lg" id="logoAuth"></div>
+      <h1>合租生活管家</h1>
+      <p>同一个屋檐下的白天与夜晚</p>
+      <span class="tag" id="authTag">选择你的账号继续</span>
     </div>
-    <div class="who">
-      <label for="whoami">当前身份</label>
-      <select id="whoami"></select>
+    <div id="authBody"></div>
+  </div>
+</div>
+
+<!-- 主壳 -->
+<div class="shell hide" id="appShell">
+  <header class="topbar">
+    <div class="inner">
+      <div class="logo" id="logoTop"></div>
+      <div style="min-width:0">
+        <div class="t-name" id="houseName">安心小屋</div>
+        <div class="t-sub" id="houseSub">3 位室友</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="btnTheme" type="button" aria-label="切换晴天 / 夜空主题" title="切换主题">
+        <svg class="moon-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="sun-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/></svg>
+      </button>
+      <button class="icon-btn" id="btnAccount" type="button" aria-label="账号菜单">
+        <span id="avaTop" style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff"></span>
+      </button>
     </div>
-    <p class="top-hint">切换身份，可以模拟不同室友的操作（确认账单、打卡、认领采购）</p>
   </header>
 
-  <nav class="tabs" id="tabs"></nav>
-  <main class="view" id="view"></main>
+  <main class="stage-inner" id="view"></main>
 
-  <a class="doclink" href="design.html">查看完整产品设计方案 →</a>
+  <nav class="tabbar" id="tabbar" aria-label="主导航"></nav>
 </div>
 
 <div id="modalRoot"></div>
@@ -243,7 +624,7 @@ a{color:var(--primary)}
 /* ============================================================
    0 · 常量与基础工具
    ============================================================ */
-const KEY = 'roomies_demo_v1';     // 保持原键名，老用户数据不丢
+let KEY = 'roomies_data_guest';   // 每个账号一份数据空间，登录后由 UI 层重设为 roomies_data_<id>
 const BAK = 'roomies_backup';      // 损坏数据原始副本的键前缀
 const SCHEMA = 2;                  // 数据结构版本
 const CONFIRM_HOURS = 72;          // 账单确认时限：超时视为默认通过
@@ -819,7 +1200,7 @@ const STATUS_CLS = { confirming: 'o', unpaid: 'b', settled: 'g', disputed: 'r', 
 function render() {
   try { tick(); } catch (e) { /* tick 异常不能阻塞渲染 */ }
   if (!S.members.length) {
-    $('#tabs').innerHTML = '';
+    $('#tabbar').innerHTML = '';
     $('#view').innerHTML = `<div class="empty"><div class="em-ico">∅</div><b>这个房屋还没有成员</b>邀请室友加入后才能记账与排班</div>`;
     return;
   }
@@ -857,7 +1238,7 @@ function renderTabs() {
     { k: 'items', n: '物品' },
     { k: 'pact', n: '公约' }
   ];
-  $('#tabs').innerHTML = t.map(x =>
+  $('#tabbar').innerHTML = t.map(x =>
     `<button class="tab${TAB === x.k ? ' on' : ''}" data-act="tab" data-id="${x.k}" type="button">` +
     `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[x.k]}</svg>` +
     `<span>${x.n}</span>${x.c ? `<span class="cnt">${x.c}</span>` : ''}</button>`
@@ -2056,11 +2437,643 @@ const ACT = {
 };
 
 /* ============================================================
-   8 · 事件绑定与启动
+   客户端 UI 层
+   —— 账号体系 / 晴天·夜空主题 / 登录注册 / 主壳启动
+   业务核心（数据层·计算·状态机·渲染）复用 client-core.js，只有一份
+   ============================================================ */
+
+/* ============================================================
+   0 · Logo 与天空装饰
+   ============================================================ */
+let logoSeq = 0;
+function logoSVG() {
+  const n = 'lg' + (++logoSeq);
+  return `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="${n}sun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE9A8"/><stop offset=".55" stop-color="#FFC24B"/><stop offset="1" stop-color="#F2921D"/>
+    </linearGradient>
+    <linearGradient id="${n}night" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#243257"/><stop offset="1" stop-color="#080D1E"/>
+    </linearGradient>
+    <clipPath id="${n}bot"><path d="M16 32a16 16 0 0 0 32 0z"/></clipPath>
+  </defs>
+  <circle cx="32" cy="32" r="29" stroke="currentColor" stroke-width="1.4" opacity=".2"/>
+  <g class="halo" stroke="#FFC24B" stroke-width="2.2" stroke-linecap="round">
+    <path d="M32 5.5v5M16.5 11.6l3.6 3.6M47.5 11.6 43.9 15.2M7 27h5M52 27h5"/>
+  </g>
+  <path d="M16 32a16 16 0 0 1 32 0z" fill="url(#${n}sun)"/>
+  <path d="M16 32a16 16 0 0 0 32 0z" fill="url(#${n}night)"/>
+  <g clip-path="url(#${n}bot)">
+    <circle cx="40.5" cy="42" r="7.6" fill="#F5F0D8"/>
+    <circle cx="34.6" cy="39.2" r="6.6" fill="#0E1730"/>
+    <circle cx="22.5" cy="41.5" r="1.5" fill="#fff"/>
+    <circle cx="27" cy="47" r="1.1" fill="#fff"/>
+    <circle cx="20.5" cy="48.6" r="1" fill="#fff"/>
+  </g>
+  <path d="M13.5 32h37" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+</svg>`;
+}
+
+function makeStars(n) {
+  let h = '';
+  for (let i = 0; i < n; i++) {
+    const x = (Math.random() * 100).toFixed(2);
+    const y = (Math.random() * 58).toFixed(2);
+    const d = (Math.random() * 4).toFixed(1);
+    const big = Math.random() > 0.84;
+    h += `<span class="star${big ? ' big' : ''}" style="left:${x}%;top:${y}%;animation-delay:${d}s"></span>`;
+  }
+  return h;
+}
+
+/* ============================================================
+   1 · 主题：晴天 / 夜空（跟随时间 + 可手动覆盖）
+   ============================================================ */
+const THEME_KEY = 'roomies_theme';
+const THEME_MODES = ['auto', 'day', 'night'];
+let themeMode = 'auto';
+
+function autoTheme() {
+  const h = new Date().getHours();
+  return (h >= 18 || h < 6) ? 'night' : 'day';
+}
+function currentTheme() { return themeMode === 'auto' ? autoTheme() : themeMode; }
+function applyTheme() {
+  const t = currentTheme();
+  document.documentElement.dataset.theme = t;
+  const btn = document.getElementById('btnTheme');
+  if (btn) btn.title = themeMode === 'auto'
+    ? '主题：跟随时间（现在' + (t === 'day' ? '晴天' : '夜空') + '）· 点击切换'
+    : (themeMode === 'day' ? '主题：已锁定晴天 · 点击切换' : '主题：已锁定夜空 · 点击切换');
+}
+function cycleTheme() {
+  /* 点一下必须看到变化：从「跟随时间」切到与当前相反的手动模式，其余情况直接翻转。
+     否则在白天点按钮会毫无反应，用户会以为坏了。 */
+  if (themeMode === 'auto') themeMode = currentTheme() === 'day' ? 'night' : 'day';
+  else themeMode = themeMode === 'day' ? 'night' : 'day';
+  try { localStorage.setItem(THEME_KEY, themeMode); } catch (e) { /* ignore */ }
+  applyTheme();
+  toast(themeMode === 'night' ? '夜空模式 ☾' : '晴天模式 ☀');
+}
+function setThemeMode(m) {
+  themeMode = m;
+  try { localStorage.setItem(THEME_KEY, m); } catch (e) { /* ignore */ }
+  applyTheme();
+}
+function initTheme() {
+  try { const v = localStorage.getItem(THEME_KEY); if (THEME_MODES.indexOf(v) >= 0) themeMode = v; } catch (e) { /* ignore */ }
+  applyTheme();
+  /* 跨过 18:00 / 6:00 时自动换装（不依赖渲染） */
+  setInterval(() => { if (themeMode === 'auto') applyTheme(); }, 300000);
+}
+
+/* ============================================================
+   2 · 账号体系（纯本地：账号只存在这台设备上）
+   ============================================================ */
+const ACC_KEY = 'roomies_accounts';
+const SESSION_KEY = 'roomies_session';
+const DATA_PREFIX = 'roomies_data_';
+const GLYPHS = ['☀', '☾', '★', '✦', '☁', '◐'];
+
+let CURRENT = null;
+let AUTH_STEP = 'pick';     // pick | pw | new
+let AUTH_TARGET = null;     // 选中的账号
+
+function getAccounts() {
+  try { const a = JSON.parse(localStorage.getItem(ACC_KEY)); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function setAccounts(list) {
+  try { localStorage.setItem(ACC_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+}
+function getSession() { try { return localStorage.getItem(SESSION_KEY) || ''; } catch (e) { return ''; } }
+function setSession(id) {
+  try { if (id) localStorage.setItem(SESSION_KEY, id); else localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+}
+
+/* 密码只保存加盐哈希；Web Crypto 不可用时（如 file:// 打开）降级并提示 */
+async function hashPw(pw, salt) {
+  const raw = salt + '::' + pw;
+  if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+      return 'sha256:' + Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) { /* 落到降级分支 */ }
+  }
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) h = ((h << 5) + h) ^ raw.charCodeAt(i);
+  return 'weak:' + (h >>> 0).toString(16);
+}
+
+const avaBg = a => `background:linear-gradient(135deg, hsl(${a.hue} 76% 62%), hsl(${(a.hue + 42) % 360} 70% 48%))`;
+const avaGlyph = a => a.glyph || '★';
+
+function demoDataExists() {
+  try { return !!localStorage.getItem('roomies_demo_v1'); } catch (e) { return false; }
+}
+
+/* ---- 邀请码 ---- */
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // 去掉易混的 I / O / 0 / 1
+function genCode() {
+  let s = '';
+  for (let i = 0; i < 6; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  return s;
+}
+const keyOf = acc => DATA_PREFIX + ((acc && acc.houseOwnerId) || (acc && acc.id));
+
+/* 在本机所有房屋里按邀请码找 */
+function findHouseByCode(code) {
+  code = String(code || '').trim().toUpperCase();
+  if (code.length !== 6) return null;
+  const accs = getAccounts();
+  for (let i = 0; i < accs.length; i++) {
+    const owner = accs[i].houseOwnerId || accs[i].id;
+    let raw = null;
+    try { raw = localStorage.getItem(DATA_PREFIX + owner); } catch (e) { continue; }
+    if (!raw) continue;
+    let st = null;
+    try { st = JSON.parse(raw); } catch (e) { continue; }
+    if (st && st.house && st.house.inviteCode === code) {
+      return { owner: owner, state: st, ownerAcc: accs[i] };
+    }
+  }
+  return null;
+}
+
+/* 把新成员写进目标房屋，返回其成员 id */
+function addMemberToHouse(found, name) {
+  const st = found.state;
+  st.members = st.members || [];
+  if (!st.house.inviteCode) st.house.inviteCode = genCode();
+  const nid = 'm' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  st.members.push({ id: nid, name: name, room: '', weight: 1, joinedAt: todayStr() });
+  try { localStorage.setItem(DATA_PREFIX + found.owner, JSON.stringify(st)); } catch (e) { /* ignore */ }
+  return nid;
+}
+
+/* ---- 房屋初始化：认领旧数据 还是 开一间空屋 ---- */
+function emptyState(acc) {
+  const ds = todayStr();
+  const s = seed();                      // 沿用结构（含公约模板），但清空所有业务数据
+  s.house = { name: (acc.name || '我') + '的合租屋', inviteCode: genCode() };
+  s.members = [{ id: 'm1', name: acc.name || '我', room: '主卧', weight: 1, joinedAt: ds }];
+  s.me = 'm1';
+  s.bills = []; s.transfers = []; s.tasks = []; s.swaps = [];
+  s.items = []; s.restocks = []; s.scoreLog = []; s.votes = [];
+  return s;
+}
+
+/* 首次进入某账号的数据空间时决定装什么内容。
+   注意：不勾选「载入本机数据」就必须是空房屋，不能再落到演示数据上。 */
+function ensureAccountData(acc) {
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) { /* ignore */ }
+  if (raw) return 'existing';
+
+  const canClaim = demoDataExists();
+  let init = null, mode = 'blank';
+  if (acc.claimDemo && canClaim) {
+    try { init = localStorage.getItem('roomies_demo_v1'); } catch (e) { init = null; }
+    if (init) mode = 'claimed';
+  }
+  if (!init) init = JSON.stringify(emptyState(acc));
+  try { localStorage.setItem(KEY, init); } catch (e) { /* ignore */ }
+  return mode;
+}
+
+/* 老房屋补邀请码（升级已有数据时用） */
+function ensureInviteCode() {
+  if (!S || !S.house) return;
+  if (!S.house.inviteCode) { S.house.inviteCode = genCode(); save(); }
+}
+
+async function register(name, pw, pw2, claimDemo, inviteCode) {
+  name = String(name || '').trim();
+  if (name.length < 2) throw BizError('昵称至少 2 个字');
+  if (name.length > 12) throw BizError('昵称不要超过 12 个字');
+  if (pw.length < 6) throw BizError('密码至少 6 位');
+  if (pw !== pw2) throw BizError('两次输入的密码不一致');
+  const list = getAccounts();
+  if (list.some(a => a.name === name)) throw BizError('这个昵称已经被使用了');
+
+  const code = String(inviteCode || '').trim().toUpperCase();
+  if (code && code.length !== 6) throw BizError('邀请码是 6 位');
+
+  const salt = uid('s');
+  const hash = await hashPw(pw, salt);
+  const acc = {
+    id: uid('a'), name: name, salt: salt, hash: hash,
+    hue: Math.floor(Math.random() * 360),
+    glyph: GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
+    createdAt: Date.now(), lastLoginAt: null,
+    houseOwnerId: null, memberId: null, claimDemo: !!claimDemo
+  };
+
+  let joined = false;
+  if (code) {
+    const found = findHouseByCode(code);
+    if (!found) throw BizError('邀请码无效，本机没有这个房屋');
+    acc.houseOwnerId = found.owner;
+    acc.memberId = addMemberToHouse(found, name);
+    joined = true;
+  } else {
+    acc.houseOwnerId = acc.id;      // 自己开一间，数据空间就是自己的
+    acc.memberId = 'm1';
+  }
+
+  list.push(acc);
+  if (!setAccounts(list)) throw BizError('无法写入本地存储，请检查浏览器设置');
+  return { acc: acc, joined: joined };
+}
+
+async function verify(acc, pw) {
+  const h = await hashPw(pw, acc.salt);
+  return h === acc.hash;
+}
+
+function removeAccount(id) {
+  const list = getAccounts().filter(a => a.id !== id);
+  setAccounts(list);
+  try { localStorage.removeItem(DATA_PREFIX + id); } catch (e) { /* ignore */ }
+  if (getSession() === id) setSession('');
+}
+
+function touchLogin(acc) {
+  acc.lastLoginAt = Date.now();
+  const list = getAccounts();
+  const i = list.findIndex(a => a.id === acc.id);
+  if (i >= 0) { list[i] = acc; setAccounts(list); }
+}
+
+function relTime(ts) {
+  if (!ts) return '尚未登录过';
+  const d = Math.floor((Date.now() - ts) / 1000);
+  if (d < 60) return '刚刚登录过';
+  if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
+  if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
+  if (d < 86400 * 30) return Math.floor(d / 86400) + ' 天前';
+  const dt = new Date(ts);
+  return (dt.getMonth() + 1) + ' 月 ' + dt.getDate() + ' 日';
+}
+
+/* ============================================================
+   3 · 登录 / 注册界面
+   ============================================================ */
+function renderAuth() {
+  const box = $('#authBody');
+  const tag = $('#authTag');
+  if (!box) return;
+
+  if (AUTH_STEP === 'pick') {
+    const list = getAccounts();
+    tag.textContent = list.length ? '选择你的账号继续' : '还没有账号，先创建一个';
+    let h = '';
+    if (list.length) {
+      h += `<div class="acct-grid">` + list.map((a, i) =>
+        `<button class="acct" data-act="pickAccount" data-id="${a.id}" type="button" style="animation-delay:${i * 55}ms">
+          <span class="ava" style="${avaBg(a)}">${esc(avaGlyph(a))}<span class="badge">${a.lastLoginAt ? '☾' : '✦'}</span></span>
+          <p class="nm">${esc(a.name)}</p>
+          <p class="mt">${esc(relTime(a.lastLoginAt))}</p>
+          <span class="del" data-act="askDelAccount" data-id="${a.id}" role="button" aria-label="删除账号" title="删除这个账号">×</span>
+        </button>`).join('') +
+        `<button class="acct new" data-act="authNew" type="button" style="animation-delay:${list.length * 55}ms">
+          <span class="plus">＋</span><p class="nm">新建账号</p>
+        </button></div>`;
+    } else {
+      h += `<div class="acct-grid"><button class="acct new" data-act="authNew" type="button" style="animation-delay:0ms">
+          <span class="plus">＋</span><p class="nm">创建账号</p>
+        </button></div>`;
+    }
+    box.innerHTML = h;
+    return;
+  }
+
+  if (AUTH_STEP === 'pw' && AUTH_TARGET) {
+    const a = AUTH_TARGET;
+    tag.textContent = '输入密码继续';
+    box.innerHTML = `
+      <div class="glass" style="padding:26px 22px">
+        <div style="text-align:center;margin-bottom:20px">
+          <span class="ava" style="${avaBg(a)};width:64px;height:64px;font-size:25px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:800;box-shadow:0 10px 26px -12px rgba(0,0,0,.5)">${esc(avaGlyph(a))}</span>
+          <h3 style="margin:0;font-size:18px">${esc(a.name)}</h3>
+          <p class="sub">${esc(relTime(a.lastLoginAt))}</p>
+        </div>
+        <form id="pwForm" autocomplete="off">
+          <div class="field" id="pwField">
+            <label for="pwInput">密码</label>
+            <input id="pwInput" type="password" placeholder="••••••" autocomplete="current-password">
+            <div class="err" id="pwErr">密码不对，再试一次</div>
+          </div>
+          <button class="btn primary wide lg" type="submit">进入房屋</button>
+        </form>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn link sm" data-act="authPick" type="button">换个账号</button>
+        </div>
+      </div>`;
+    const inp = $('#pwInput');
+    if (inp) setTimeout(() => { try { inp.focus(); } catch (e) { /* ignore */ } }, 80);
+    const form = $('#pwForm');
+    if (form) form.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const v = $('#pwInput').value || '';
+      if (!v) { $('#pwField').classList.add('bad'); $('#pwErr').textContent = '请输入密码'; return; }
+      const ok = await verify(a, v);
+      if (!ok) {
+        $('#pwField').classList.add('bad');
+        $('#pwErr').textContent = '密码不对，再试一次';
+        $('#pwInput').value = '';
+        return;
+      }
+      enterApp(a);
+    });
+    return;
+  }
+
+  /* 注册 */
+  tag.textContent = '创建一个新账号';
+  const canClaim = demoDataExists();
+  box.innerHTML = `
+    <div class="glass" style="padding:26px 22px">
+      <h3 style="margin:0 0 18px;font-size:18px">创建账号</h3>
+      <form id="rgForm" autocomplete="off">
+        <div class="field" id="rgNameF">
+          <label for="rgName">你的昵称</label>
+          <input id="rgName" placeholder="例如：小林" maxlength="12">
+          <div class="err"></div>
+        </div>
+        <div class="field" id="rgCodeF">
+          <label for="rgCode">邀请码（有就填）</label>
+          <input id="rgCode" placeholder="6 位邀请码" maxlength="6" autocapitalize="characters" style="letter-spacing:4px;text-transform:uppercase">
+          <div class="err"></div>
+        </div>
+        <div class="f2">
+          <div class="field" id="rgPwF">
+            <label for="rgPw">密码</label>
+            <input id="rgPw" type="password" placeholder="至少 6 位">
+            <div class="err"></div>
+          </div>
+          <div class="field" id="rgPw2F">
+            <label for="rgPw2">再输一次</label>
+            <input id="rgPw2" type="password" placeholder="确认密码">
+            <div class="err"></div>
+          </div>
+        </div>
+        <div class="pw-meter" id="pwMeter"><i></i><i></i><i></i><i></i></div>
+        ${canClaim ? `<label class="chk" style="margin-top:14px" id="rgClaimWrap">
+          <input type="checkbox" id="rgClaim" checked>
+          <span>载入本机已有的数据</span>
+        </label>` : ''}
+        <button class="btn primary wide lg" type="submit" style="margin-top:18px">创建并进入</button>
+      </form>
+      <div class="btnrow" style="margin-top:14px">
+        <button class="btn link sm" data-act="authPick" type="button">返回账号列表</button>
+      </div>
+    </div>`;
+
+  const meter = $('#pwMeter');
+  const rgPw = $('#rgPw');
+  if (rgPw && meter) rgPw.addEventListener('input', () => {
+    const v = rgPw.value;
+    let s = 0;
+    if (v.length >= 6) s++;
+    if (v.length >= 10) s++;
+    if (/[A-Za-z]/.test(v) && /\d/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    [...meter.children].forEach((el, i) => {
+      el.style.background = i < s
+        ? (s <= 1 ? 'var(--bad)' : (s === 2 ? 'var(--warn)' : 'var(--good)'))
+        : 'var(--line)';
+    });
+  });
+
+  /* 填了邀请码就是加入别人房屋，此时不该再问「是否载入本机数据」 */
+  const rgCodeEl = $('#rgCode'), claimWrap = $('#rgClaimWrap');
+  if (rgCodeEl && claimWrap) {
+    rgCodeEl.addEventListener('input', () => {
+      claimWrap.classList.toggle('hide', !!rgCodeEl.value.trim());
+    });
+  }
+
+  const rgForm = $('#rgForm');
+  if (rgForm) rgForm.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    ['rgNameF', 'rgCodeF', 'rgPwF', 'rgPw2F'].forEach(id => $('#' + id).classList.remove('bad'));
+    const name = $('#rgName').value, pw = $('#rgPw').value, pw2 = $('#rgPw2').value;
+    const claim = $('#rgClaim') ? $('#rgClaim').checked : false;
+    const code = $('#rgCode') ? $('#rgCode').value : '';
+    try {
+      const r = await register(name, pw, pw2, claim, code);
+      enterApp(r.acc);
+    } catch (e) {
+      const msg = e.message || '创建失败';
+      let f = $('#rgPwF');
+      if (/昵称/.test(msg)) f = $('#rgNameF');
+      else if (/一致/.test(msg)) f = $('#rgPw2F');
+      else if (/邀请码/.test(msg)) f = $('#rgCodeF');
+      f.classList.add('bad');
+      f.querySelector('.err').textContent = msg;
+    }
+  });
+}
+
+function showAuth() {
+  const shell = $('#appShell'), stage = $('#authStage');
+  if (shell) shell.classList.add('hide');
+  if (stage) stage.classList.remove('hide');
+  renderAuth();
+}
+
+/* ============================================================
+   4 · 进入应用
+   ============================================================ */
+function enterApp(acc) {
+  CURRENT = acc;
+  touchLogin(acc);
+  setSession(acc.id);
+  KEY = keyOf(acc);                       // 加入别人房屋时，读写的是屋主的数据空间
+
+  const shell = $('#appShell'), stage = $('#authStage');
+  if (stage) stage.classList.add('hide');
+  if (shell) shell.classList.remove('hide');
+
+  const avaTop = $('#avaTop');
+  if (avaTop) { avaTop.style.cssText += ';' + avaBg(acc); avaTop.textContent = avaGlyph(acc); }
+
+  REPAIRS = [];
+  const initMode = ensureAccountData(acc);  // 空屋 / 认领旧数据，二者只能取其一
+  const boot = load();
+  if (acc.memberId && S.members.some(m => m.id === acc.memberId)) S.me = acc.memberId;
+  ensureTasks();
+  ensureInviteCode();
+  checkSettled();
+  save();
+  render();
+  syncHouseHeader();
+  window.scrollTo(0, 0);
+
+  if (initMode === 'claimed') {
+    setTimeout(() => toast('已载入本机原有数据'), 420);
+  } else if (boot && boot.broken) {
+    setTimeout(() => openSheet(`
+      <h3>本地数据异常</h3>
+      <p class="sh-sub">这个账号的数据无法读取，已保留原始副本，当前显示的是演示数据</p>
+      <div class="btnrow" style="margin-top:16px">
+        <button class="btn ghost" data-act="brokenNotice" type="button">查看原始副本</button>
+        <button class="btn primary" data-act="close" type="button">知道了</button>
+      </div>`), 420);
+  } else if (boot && boot.repairs && boot.repairs.length) {
+    setTimeout(() => toast('已自动修复 ' + boot.repairs.length + ' 处数据异常'), 480);
+  }
+}
+
+function syncHouseHeader() {
+  if (!S || !S.house) return;
+  const n = document.getElementById('houseName');
+  const s = document.getElementById('houseSub');
+  if (n) n.textContent = S.house.name || '我的合租屋';
+  if (s) {
+    const my = S.members.filter(m => m.id === S.me)[0];
+    s.textContent = S.members.length + ' 位室友' + (my ? ' · 当前身份 ' + my.name : '');
+  }
+}
+
+function logout() {
+  setSession('');
+  CURRENT = null;
+  S = null;
+  closeSheet();
+  AUTH_STEP = 'pick'; AUTH_TARGET = null;
+  showAuth();
+  toast('已退出登录');
+}
+
+/* 客户端不需要顶栏的身份下拉，身份切换放进账号菜单 */
+renderWho = function () { /* 由账号菜单接管 */ };
+
+/* 每次切换 tab 或渲染后，同步顶栏房屋信息 */
+const _render = render;
+render = function () {
+  _render();
+  syncHouseHeader();
+};
+
+/* ============================================================
+   5 · 账号菜单
+   ============================================================ */
+function sheetAccount() {
+  if (!CURRENT) return;
+  const me = S && S.members.filter(m => m.id === S.me)[0];
+  const modeTxt = themeMode === 'auto' ? '跟随时间' : (themeMode === 'day' ? '锁定晴天' : '锁定夜空');
+  openSheet(`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+      <span style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex:0 0 auto;${avaBg(CURRENT)}">${esc(avaGlyph(CURRENT))}</span>
+      <div style="min-width:0">
+        <h3 style="margin:0">${esc(CURRENT.name)}</h3>
+        <p class="sh-sub" style="margin:2px 0 0">账号创建于 ${esc(relTime(CURRENT.createdAt).replace('登录过', '创建'))}</p>
+      </div>
+    </div>
+    <div class="divide"></div>
+
+    <p class="sub" style="font-weight:800;color:var(--ink-2);margin:0 0 8px">当前身份</p>
+    <div class="rowlist">
+      ${(S.members || []).map(m => `<div class="rowitem">
+        <span class="nm"><span class="av">${esc(mInit(m.id))}</span>${esc(m.name)} · ${esc(m.room || '')}${m.id === S.me ? '<span class="pill b">当前</span>' : ''}</span>
+        ${m.id === S.me ? '' : `<button class="btn ghost sm" data-act="switchMe" data-id="${m.id}" type="button">切为</button>`}
+      </div>`).join('')}
+    </div>
+
+    <div class="divide"></div>
+    <p class="sub" style="font-weight:800;color:var(--ink-2);margin:0 0 8px">房屋邀请码</p>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:24px;font-weight:800;letter-spacing:6px;font-variant-numeric:tabular-nums">${esc((S.house && S.house.inviteCode) || '------')}</span>
+      <button class="btn ghost sm" data-act="copyCode" type="button">复制</button>
+    </div>
+
+    <div class="divide"></div>
+    <p class="sub" style="font-weight:800;color:var(--ink-2);margin:0 0 8px">外观</p>
+    <div class="rowitem">
+      <span class="nm"><span class="av">${themeMode === 'night' ? '☾' : (themeMode === 'day' ? '☀' : '◐')}</span>主题：${modeTxt}</span>
+      <button class="btn ghost sm" data-act="cycleTheme" type="button">切换</button>
+    </div>
+    ${themeMode === 'auto' ? '' : `<div class="btnrow"><button class="btn ghost sm" data-act="themeAuto" type="button">恢复「跟随时间」</button></div>`}
+
+    <div class="divide"></div>
+    <div class="btnrow">
+      <button class="btn ghost" data-act="logout" type="button">退出登录</button>
+      <button class="btn danger" data-act="askDelAccount" data-id="${CURRENT.id}" type="button">删除账号</button>
+    </div>
+    <div class="btnrow"><button class="btn link" data-act="close" type="button">关闭</button></div>
+  `);
+}
+
+/* ============================================================
+   6 · 动作扩展
+   ============================================================ */
+Object.assign(ACT, {
+  pickAccount(el, id) {
+    const a = getAccounts().filter(x => x.id === id)[0];
+    if (!a) { toast('账号不存在'); return; }
+    AUTH_TARGET = a; AUTH_STEP = 'pw'; renderAuth();
+  },
+  authPick() { AUTH_STEP = 'pick'; AUTH_TARGET = null; renderAuth(); },
+  authNew() { AUTH_STEP = 'new'; AUTH_TARGET = null; renderAuth(); },
+
+  askDelAccount(el, id) {
+    const a = getAccounts().filter(x => x.id === id)[0];
+    if (!a) return;
+    sheetConfirm('删除账号「' + a.name + '」？', [
+      '这个账号的记录会被永久清除，无法恢复',
+      '如果想保留，请先进入该账号并导出备份'
+    ], '确认删除', 'delAccount', id, true);
+  },
+  delAccount(el, id) {
+    removeAccount(id);
+    closeSheet();
+    if (CURRENT && CURRENT.id === id) { logout(); }
+    else { AUTH_STEP = 'pick'; renderAuth(); toast('账号已删除'); }
+  },
+
+  cycleTheme() { cycleTheme(); closeSheet(); if (CURRENT) sheetAccount(); },
+  themeAuto() { setThemeMode('auto'); closeSheet(); if (CURRENT) sheetAccount(); toast('已恢复跟随时间'); },
+  switchMe(el, id) {
+    S.me = id;
+    save(); closeSheet(); render();
+    toast('已切换为 ' + mName(id) + ' 的视角');
+  },
+  logout() { logout(); },
+  accountMenu() { sheetAccount(); },
+  copyCode() {
+    const code = (S && S.house && S.house.inviteCode) || '';
+    if (!code) { toast('还没有邀请码'); return; }
+    const done = () => toast('邀请码已复制：' + code);
+    const fallback = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        done();
+      } catch (e) { toast('邀请码：' + code); }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done, fallback);
+        return;
+      }
+    } catch (e) { /* 落到 fallback */ }
+    fallback();
+  }
+});
+
+/* ============================================================
+   7 · 事件绑定与启动
    ============================================================ */
 document.addEventListener('click', e => {
-  if (e.target.classList && e.target.classList.contains('mask')) { closeSheet(); return; }
-  const el = e.target.closest ? e.target.closest('[data-act]') : null;
+  const t = e.target;
+  if (t && t.classList && t.classList.contains('mask')) { closeSheet(); return; }
+  const el = t && t.closest ? t.closest('[data-act]') : null;
   if (!el) return;
   const fn = ACT[el.dataset.act];
   if (fn) { e.preventDefault(); fn(el, el.dataset.id, e); }
@@ -2070,54 +3083,34 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('#modalRoot').innerHTML) { e.preventDefault(); closeSheet(); }
 });
 
-/* 多标签页同步：另一个标签页改了数据，这里重新加载而不是互相覆盖 */
+/* 多标签页同步（同一账号在另一标签页改动了数据） */
 window.addEventListener('storage', e => {
+  if (!CURRENT) return;
   if (e.key !== KEY || !e.newValue) return;
-  try {
-    const r = load();
-    REPAIRS = [];
-    checkSettled();
-    closeSheet();
-    render();
-    toast('数据已在其他标签页更新，已同步');
-  } catch (err) { /* 忽略：本页保持原状比崩掉更好 */ }
+  try { load(); REPAIRS = []; checkSettled(); closeSheet(); render(); toast('数据已在其他标签页更新，已同步'); }
+  catch (err) { /* 保持原状优于崩溃 */ }
 });
 
-const whoSel = $('#whoami');
-if (whoSel) whoSel.addEventListener('change', e => {
-  S.me = e.target.value;
-  save(); closeSheet(); render();
-});
+const btnTheme = $('#btnTheme');
+if (btnTheme) btnTheme.addEventListener('click', cycleTheme);
+const btnAccount = $('#btnAccount');
+if (btnAccount) btnAccount.addEventListener('click', sheetAccount);
 
 /* ---- 启动 ---- */
-const boot = load();
-ensureTasks();
-checkSettled();
-save();        // 立即持久化「迁移 / 校验修复 / 补排班」的结果，避免每次刷新重复处理
-render();
+initTheme();
+const stars = $('#stars');
+if (stars) stars.innerHTML = makeStars(58);
+const logoAuth = $('#logoAuth');
+if (logoAuth) logoAuth.innerHTML = logoSVG();
+const logoTop = $('#logoTop');
+if (logoTop) logoTop.innerHTML = logoSVG();
 
-if (!STORAGE_OK) {
-  setTimeout(() => toast('浏览器禁用了本地存储，本次改动不会被保存'), 500);
-}
-if (boot && boot.broken) {
-  setTimeout(() => openSheet(`
-    <h3>本地数据异常</h3>
-    <p class="sh-sub">检测到已保存的数据无法读取，已为你保留原始副本，当前显示的是演示数据</p>
-    <div class="rowitem"><span class="nm">你可以先把原始副本导出留存，再决定是否继续</span></div>
-    <div class="btnrow" style="margin-top:16px">
-      <button class="btn ghost" data-act="brokenNotice" type="button">查看原始副本</button>
-      <button class="btn" data-act="close" type="button">知道了</button>
-    </div>
-  `), 400);
-} else if (boot && boot.repairs && boot.repairs.length) {
-  setTimeout(() => toast('已自动修复 ' + boot.repairs.length + ' 处数据异常（未静默改动）'), 500);
-} else if (boot && boot.migrated) {
-  setTimeout(() => toast('数据已从 v' + boot.fromVersion + ' 升级到 v' + SCHEMA), 500);
-}
-
-
-
-
+(function boot() {
+  const sid = getSession();
+  const acc = getAccounts().filter(a => a.id === sid)[0];
+  if (acc) enterApp(acc);
+  else showAuth();
+})();
 })();
 </script>
 </body>
