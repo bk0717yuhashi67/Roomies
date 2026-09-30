@@ -10,6 +10,9 @@
 let logoSeq = 0;
 function logoSVG() {
   const n = 'lg' + (++logoSeq);
+  /* 一个屋檐，两半光景：屋顶是白天，房身是夜晚。
+     用「房子」做主体 —— 它同时说清了「同一个屋檐下」和「合租」。
+     月亮放在房身内部，完整不被裁切（旧版用 clipPath 裁到下半圆，月亮被切掉一块）。 */
   return `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
   <defs>
     <linearGradient id="${n}sun" x1="0" y1="0" x2="1" y2="1">
@@ -18,22 +21,21 @@ function logoSVG() {
     <linearGradient id="${n}night" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#243257"/><stop offset="1" stop-color="#080D1E"/>
     </linearGradient>
-    <clipPath id="${n}bot"><path d="M16 32a16 16 0 0 0 32 0z"/></clipPath>
+    <clipPath id="${n}house"><path d="M32 13 53 30.5 53 52 11 52 11 30.5Z"/></clipPath>
   </defs>
-  <circle cx="32" cy="32" r="29" stroke="currentColor" stroke-width="1.4" opacity=".2"/>
-  <g class="halo" stroke="#FFC24B" stroke-width="2.2" stroke-linecap="round">
-    <path d="M32 5.5v5M16.5 11.6l3.6 3.6M47.5 11.6 43.9 15.2M7 27h5M52 27h5"/>
+
+  <g clip-path="url(#${n}house)">
+    <rect x="8" y="8" width="48" height="23" fill="url(#${n}sun)"/>
+    <rect x="8" y="31" width="48" height="24" fill="url(#${n}night)"/>
+    <circle cx="24" cy="42" r="6.4" fill="#F7F2DC"/>
+    <circle cx="19.7" cy="39.4" r="5.5" fill="#0E1730"/>
+    <circle class="lg-star" cx="38.5" cy="39.5" r="1.5" fill="#fff"/>
+    <circle class="lg-star b" cx="44.5" cy="45.5" r="1.1" fill="#fff"/>
+    <circle cx="35" cy="48.5" r="0.9" fill="#fff" opacity=".8"/>
   </g>
-  <path d="M16 32a16 16 0 0 1 32 0z" fill="url(#${n}sun)"/>
-  <path d="M16 32a16 16 0 0 0 32 0z" fill="url(#${n}night)"/>
-  <g clip-path="url(#${n}bot)">
-    <circle cx="40.5" cy="42" r="7.6" fill="#F5F0D8"/>
-    <circle cx="34.6" cy="39.2" r="6.6" fill="#0E1730"/>
-    <circle cx="22.5" cy="41.5" r="1.5" fill="#fff"/>
-    <circle cx="27" cy="47" r="1.1" fill="#fff"/>
-    <circle cx="20.5" cy="48.6" r="1" fill="#fff"/>
-  </g>
-  <path d="M13.5 32h37" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+
+  <path d="M32 13 53 30.5 53 52 11 52 11 30.5Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M11 30.5h42" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 </svg>`;
 }
 

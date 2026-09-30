@@ -60,6 +60,37 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await wait(800);
   await page.screenshot({ path: path.join(OUT, '01-auth.png'), fullPage: true });
 
+  /* 登录页在夜空主题下的可读性（用户反馈标题看不见，这里取实际计算色来定位） */
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'night'; });
+  await wait(750);
+  await page.screenshot({ path: path.join(OUT, '01b-auth-night.png'), fullPage: true });
+  const authText = await page.evaluate(() => {
+    const pick = sel => {
+      const el = document.querySelector(sel);
+      if (!el) return { found: false };
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return { found: true, color: cs.color, opacity: cs.opacity, z: cs.zIndex, pos: cs.position, w: Math.round(r.width), h: Math.round(r.height) };
+    };
+    const title = document.querySelector('.brand-hero h1');
+    const stage = document.querySelector('.center-stage');
+    return {
+      theme: document.documentElement.dataset.theme,
+      h1: pick('.brand-hero h1'),
+      p: pick('.brand-hero p'),
+      titleText: title ? title.textContent : '(未找到)',
+      titleColorIsDefault: title ? getComputedStyle(title).color === 'rgb(238, 243, 255)' : null,
+      stageZ: stage ? getComputedStyle(stage).zIndex : 'missing',
+      skyZ: getComputedStyle(document.querySelector('.sky')).zIndex,
+      nightSkyOpacity: getComputedStyle(document.querySelector('.night-sky')).opacity
+    };
+  });
+  console.log('\n=== 登录页夜空下的文字与层级 ===');
+  console.log(JSON.stringify(authText, null, 2));
+
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'day'; });
+  await wait(500);
+
   /* 走真实注册流程 */
   await page.click('[data-act="authNew"]');
   await wait(500);

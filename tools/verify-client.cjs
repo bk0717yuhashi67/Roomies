@@ -326,6 +326,11 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
       .map(m => m[1]);
     const missingVars = [...new Set(usedVars)].filter(v => !definedVars.has(v));
     check('没有引用未定义的 CSS 变量', missingVars.length === 0, missingVars.join(', ') || '全部已定义');
+
+    /* 登录页容器缺少 z-index 时，position:fixed;z-index:0 的 .sky 会盖在它上面 ——
+       夜空主题下 .night-sky 会把标题整个遮住（白天看不出来，因为那层是透明的）。 */
+    check('登录页容器有层级（防止夜空层盖住标题）', /\.center-stage\{position:relative;z-index:1/.test(html));
+    check('logo 改为房子造型（屋顶是白天 / 房身是夜晚）', /\$\{n\}house/.test(html));
     check('弹层有退出动画与降级保护', /dataset\.closing/.test(html) && /typeof sheet\.animate !== 'function'/.test(html));
     check('新账号初始化会清空公约', /s\.pacts = \[\]/.test(html));
   }
