@@ -55,7 +55,7 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     check('主壳默认隐藏', q(d, '#appShell').classList.contains('hide'));
     check('提示创建账号', /创建账号/.test(txt(d)));
     check('Logo 已注入 SVG', !!q(d, '#logoAuth svg'), (q(d, '#logoAuth svg') ? 'yes' : 'no'));
-    check('星空装饰已生成', d.querySelectorAll('#stars .star').length > 40, d.querySelectorAll('#stars .star').length + ' 颗');
+    check('星空装饰已生成', d.querySelectorAll('#stars .star').length >= 20, d.querySelectorAll('#stars .star').length + ' 颗');
     check('默认主题已写入 data-theme', !!d.documentElement.dataset.theme, d.documentElement.dataset.theme);
     check('无运行时错误', errors.length === 0, errors.join(' | '));
   }
@@ -191,7 +191,12 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     const acc = JSON.parse(dump(dom).roomies_accounts || '[]')[0];
     const st = JSON.parse(dump(dom)['roomies_data_' + (acc && acc.id)] || '{}');
     check('不勾选时是空房屋（无账单）', Array.isArray(st.bills) && st.bills.length === 0, (st.bills || []).length + ' 笔');
-    check('不勾选时没有值日记录', Array.isArray(st.tasks) && st.tasks.length <= 7, (st.tasks || []).length + ' 条（仅本周轮值）');
+    check('不勾选时没有任何值日记录', Array.isArray(st.tasks) && st.tasks.length === 0, (st.tasks || []).length + ' 条');
+    check('不勾选时没有公约', Array.isArray(st.pacts) && st.pacts.length === 0, (st.pacts || []).length + ' 条');
+    check('公约版本重置为 v1.0（不继承演示数据的 v1.2）', st.pactVersion === 'v1.0', st.pactVersion);
+    check('不勾选时没有公共物品', Array.isArray(st.items) && st.items.length === 0, (st.items || []).length + ' 项');
+    check('不勾选时没有贡献分流水', Array.isArray(st.scoreLog) && st.scoreLog.length === 0, (st.scoreLog || []).length + ' 条');
+    check('不勾选时没有提案', Array.isArray(st.votes) && st.votes.length === 0, (st.votes || []).length + ' 条');
     check('成员只有账号本人', (st.members || []).length === 1 && st.members[0].name === '新人', (st.members || []).map(m => m.name).join(','));
     check('不再出现演示数据里的「小林」', !(st.members || []).some(m => m.name === '小林'));
     check('房屋已自动生成邀请码', /^[A-Z2-9]{6}$/.test((st.house || {}).inviteCode || ''), (st.house || {}).inviteCode);
@@ -265,6 +270,17 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     check('无外部 CDN 依赖', !/(src|href)="https?:\/\//.test(html));
     check('免登录 Demo 已移除', !fs.existsSync(path.join(__dirname, '..', 'app.html')));
     check('体量合理（< 200KB）', html.length < 200000, Math.round(html.length / 1024) + ' KB');
+
+    /* ---- 防回归：这几条都是真实发生过的缺陷，不能让它们悄悄回来 ---- */
+    check('没有把 ico 类误加到 .cr 行容器上（会压成 38px 使文字竖排）',
+      !/class="cr ico"/.test(html) && !/cr\$\{ico/.test(html));
+    /* 注意：不能用 /backdrop-filter/ 计数 —— "-webkit-backdrop-filter" 里也含这个子串，会被算两遍 */
+    const bd = (html.match(/(?<!-webkit-)backdrop-filter:/g) || []).length;
+    check('backdrop-filter 用量受控（< 16 处）', bd < 16, bd + ' 处');
+    const sm = html.match(/makeStars\((\d+)\)/);
+    check('星星数量受控（<= 32 颗）', !!sm && Number(sm[1]) <= 32, sm ? sm[1] + ' 颗' : '未找到');
+    check('存在视图切换过渡动画', /@keyframes viewIn/.test(html) && /function viewIn\(\)/.test(html));
+    check('新账号初始化会清空公约', /s\.pacts = \[\]/.test(html));
   }
 
   console.log('\n' + '='.repeat(56));
