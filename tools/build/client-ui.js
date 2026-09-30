@@ -378,8 +378,8 @@ function renderAuth() {
         <div class="field">
           <label>接下来要</label>
           <div class="seg" id="rgMode" data-mode="create" role="tablist" aria-label="创建或加入合租房">
-            <button type="button" class="seg-i on" data-mode="create" role="tab" aria-selected="true">创建一间合租房</button>
-            <button type="button" class="seg-i" data-mode="join" role="tab" aria-selected="false">加入室友的</button>
+            <button type="button" class="seg-i on" data-mode="create" role="tab" aria-selected="true">新建合租房</button>
+            <button type="button" class="seg-i" data-mode="join" role="tab" aria-selected="false">加入合租房</button>
           </div>
         </div>
 
@@ -413,7 +413,7 @@ function renderAuth() {
 
         ${canClaim ? `<label class="chk" style="margin-top:6px" id="rgClaimWrap">
           <input type="checkbox" id="rgClaim" checked>
-          <span>载入本机已有的数据</span>
+          <span>载入模拟数据（仅供展示）</span>
         </label>` : ''}
         <button class="btn primary wide lg" type="submit" id="rgSubmit" style="margin-top:18px">创建并进入</button>
       </form>
@@ -444,8 +444,8 @@ function renderAuth() {
   const modeBtns = modeBox ? modeBox.querySelectorAll('.seg-i') : [];
   const claimWrap = $('#rgClaimWrap');
   const TIP = {
-    create: '创建后会拿到 6 位邀请码，发给室友，他们在注册时选「加入室友的」就能进来。',
-    join: '向屋主要 6 位邀请码。填入后你就是这间房的成员，和他看到同一份数据。'
+    create: '建好后你就是第一位住户，系统会自动生成邀请码，发给室友即可加入。',
+    join: '向屋主要一个 6 位邀请码即可加入，与屋主共享同一份房屋数据。'
   };
   function applyMode(m) {
     if (modeBox) modeBox.dataset.mode = m;
@@ -460,7 +460,7 @@ function renderAuth() {
     /* 加入别人房屋时，「载入本机旧数据」没有意义 */
     if (claimWrap) claimWrap.classList.toggle('hide', m !== 'create');
     if (submit) submit.textContent = m === 'join' ? '加入并进入' : '创建并进入';
-    if (tip) tip.textContent = TIP[m] + '（邀请码只在同一台设备内有效，跨设备需要云端支持）';
+    if (tip) tip.textContent = TIP[m] + '（邀请码暂仅支持同一台设备）';
   }
   modeBtns.forEach(b => b.addEventListener('click', () => applyMode(b.dataset.mode)));
   applyMode('create');
@@ -597,11 +597,10 @@ function sheetAccount() {
     </div>
     <div class="divide"></div>
 
-    <p class="sub" style="font-weight:800;color:var(--ink-2);margin:0 0 8px">当前身份</p>
+    <p class="sub" style="font-weight:800;color:var(--ink-2);margin:0 0 8px">房屋成员</p>
     <div class="rowlist">
       ${(S.members || []).map(m => `<div class="rowitem">
-        <span class="nm"><span class="av">${esc(mInit(m.id))}</span>${esc(m.name)} · ${esc(m.room || '')}${m.id === S.me ? '<span class="pill b">当前</span>' : ''}</span>
-        ${m.id === S.me ? '' : `<button class="btn ghost sm" data-act="switchMe" data-id="${m.id}" type="button">切为</button>`}
+        <span class="nm"><span class="av">${esc(mInit(m.id))}</span>${esc(m.name)} · ${esc(m.room || '')}${m.id === S.me ? '<span class="pill b">我</span>' : ''}</span>
       </div>`).join('')}
     </div>
 
@@ -658,11 +657,6 @@ Object.assign(ACT, {
 
   cycleTheme() { cycleTheme(); closeSheet(); if (CURRENT) sheetAccount(); },
   themeAuto() { setThemeMode('auto'); closeSheet(); if (CURRENT) sheetAccount(); toast('已恢复跟随时间'); },
-  switchMe(el, id) {
-    S.me = id;
-    save(); closeSheet(); render();
-    toast('已切换为 ' + mName(id) + ' 的视角');
-  },
   logout() { logout(); },
   accountMenu() { sheetAccount(); },
   copyCode() {
@@ -725,29 +719,23 @@ const stars = $('#stars');
 /* 28 颗足够铺满夜空 —— 每颗都是一个独立合成层，数量直接换算力开销 */
 if (stars) stars.innerHTML = makeStars(28);
 
-/* 流星：CSS 动画本身不带随机，所以在每轮动画开始时（animationiteration）重掷参数。
-   方向固定向右下；角度必须按视口实际比例换算 ——
-   vw 与 vh 对应的像素不同，直接用角度常量会让尾巴和轨迹对不上。 */
-const meteor = document.querySelector('.meteor');
-if (meteor) {
-  const rnd = (a, b) => a + Math.random() * (b - a);
-  const reroll = () => {
+/* 流星：位置与轨迹写死在 CSS 的三颗（m1/m2/m3）里，这里只负责补上旋转角度。
+   角度必须按视口实际比例换算 —— vw 与 vh 对应的像素差很多（窄屏上 1vh 远大于 1vw），
+   直接写角度常量会让尾巴倾角和飞行轨迹对不上。 */
+const meteors = document.querySelectorAll('.meteor');
+if (meteors.length) {
+  const alignAngle = () => {
     const w = window.innerWidth || 390, h = window.innerHeight || 844;
-    /* 先定视觉角度（向右下 35°–52°），再反算垂直位移。
-       直接给 vw / vh 组合会偏陡 —— 窄屏上 1vh 的像素远多于 1vw，
-       实测能到 60°，看起来几乎是竖直下落。 */
-    const deg = rnd(35, 52);
-    const dxi = rnd(52, 82);
-    const dxPx = dxi * w / 100;
-    const dyi = (Math.tan(deg * Math.PI / 180) * dxPx) / h * 100;
-    meteor.style.setProperty('--mx', rnd(-20, 42).toFixed(1) + 'vw');
-    meteor.style.setProperty('--my', rnd(-4, 32).toFixed(1) + 'vh');
-    meteor.style.setProperty('--mdx', dxi.toFixed(1) + 'vw');
-    meteor.style.setProperty('--mdy', Math.max(8, dyi).toFixed(1) + 'vh');
-    meteor.style.setProperty('--mrot', deg.toFixed(1) + 'deg');
+    meteors.forEach(m => {
+      const cs = getComputedStyle(m);
+      const mdx = parseFloat(cs.getPropertyValue('--mdx')) || 60;   // 水平位移 (vw)
+      const mdy = parseFloat(cs.getPropertyValue('--mdy')) || 40;   // 垂直位移 (vh)
+      const ang = Math.atan2(mdy * h / 100, mdx * w / 100) * 180 / Math.PI;
+      m.style.setProperty('--mrot', (isFinite(ang) ? ang : 36).toFixed(1) + 'deg');
+    });
   };
-  reroll();
-  meteor.addEventListener('animationiteration', reroll);
+  alignAngle();
+  window.addEventListener('resize', alignAngle);
 }
 const logoAuth = $('#logoAuth');
 if (logoAuth) logoAuth.innerHTML = logoSVG();

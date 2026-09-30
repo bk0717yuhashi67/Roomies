@@ -98,14 +98,17 @@ const click = (doc, sel) => { const el = q(doc, sel); if (!el) throw new Error('
 const tryClick = (doc, sel) => { const el = q(doc, sel); if (!el) { check('元素存在 ' + sel, false); return false; } el.click(); return true; };
 const setVal = (doc, sel, v) => { const el = q(doc, sel); if (!el) { check('表单字段存在 ' + sel, false); return false; } el.value = v; return true; };
 
-/* 切换当前身份：客户端把身份切换移进了账号菜单，这里走真实交互路径 */
+/* 切换视角：身份切换功能已移除，改为改写数据里的 me 并派发 storage 事件。
+   这走的是应用**真实的**「多标签页同步」回调（load + render），不是测试后门。 */
 async function switchTo(doc, id) {
-  click(doc, '#btnAccount');
-  await wait(70);
-  const el = q(doc, '[data-act="switchMe"][data-id="' + id + '"]');
-  if (el) el.click();
-  else { const m = q(doc, '#modalRoot .mask'); if (m) m.click(); }
-  await wait(70);
+  const win = doc.defaultView;
+  const raw = JSON.parse(win.localStorage.getItem(KEY) || '{}');
+  if (raw.me === id) return;
+  raw.me = id;
+  const json = JSON.stringify(raw);
+  win.localStorage.setItem(KEY, json);
+  win.dispatchEvent(new win.StorageEvent('storage', { key: KEY, newValue: json }));
+  await wait(110);
 }
 
 /* ============================================================ */
@@ -120,12 +123,11 @@ async function switchTo(doc, id) {
     const view = q(doc, '#view');
     check('首屏渲染出内容', view && view.innerHTML.length > 400, view ? view.innerHTML.length + ' chars' : 'no #view');
     check('底部导航 5 个 tab', doc.querySelectorAll('#tabbar .tab').length === 5);
-    /* 客户端把身份切换放进了账号菜单（当前身份不显示切换按钮，故为 2 个） */
+    /* 账号菜单只列出成员，不再提供身份切换 */
     click(doc, '#btnAccount'); await wait(70);
     const accSheet = q(doc, '#modalRoot .sheet');
-    check('账号菜单可切换身份（列出其他成员）',
-      !!accSheet && (accSheet.innerHTML.match(/data-act="switchMe"/g) || []).length === 2);
-    check('账号菜单显示当前身份', !!accSheet && /当前身份/.test(accSheet.innerHTML));
+    check('账号菜单列出房屋成员', !!accSheet && /房屋成员/.test(accSheet.innerHTML));
+    check('账号菜单不再提供身份切换', !!accSheet && !/data-act="switchMe"/.test(accSheet.innerHTML));
     click(doc, '#modalRoot .mask'); await wait(50);
     check('首页有「待我处理」', /待我处理/.test(view.innerHTML));
     check('首页有待确认账单', /电费 2026-09/.test(view.innerHTML));

@@ -111,38 +111,69 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await page.screenshot({ path: path.join(OUT, name + '.png'), fullPage: true });
   }
 
+  /* 白天时夜空层应当是完全透明的（否则会盖住晴天底色） */
+  const dayOpacity = await page.evaluate(() => {
+    const ns = document.querySelector('.night-sky');
+    return ns ? getComputedStyle(ns).opacity : 'missing';
+  });
+  console.log('\n白天 night-sky opacity:', dayOpacity, '(应为 0)');
+
   /* 夜空主题截图 */
   await page.click('#btnTheme');
   await wait(900);
   await page.screenshot({ path: path.join(OUT, '08-night.png'), fullPage: true });
 
-  /* 流星参数：验证「位置随机 + 向右下 + 变小变淡」 */
-  const meteorInfo = await page.evaluate(() => {
-    const m = document.querySelector('.meteor');
-    if (!m) return null;
-    const cs = getComputedStyle(m);
+  /* 夜空层过渡 + 三颗流星的参数 */
+  const skyInfo = await page.evaluate(() => {
+    const ns = document.querySelector('.night-sky');
+    const nsCs = ns ? getComputedStyle(ns) : null;
     return {
-      mx: cs.getPropertyValue('--mx').trim(), my: cs.getPropertyValue('--my').trim(),
-      mdx: cs.getPropertyValue('--mdx').trim(), mdy: cs.getPropertyValue('--mdy').trim(),
-      mrot: cs.getPropertyValue('--mrot').trim(),
-      size: cs.width + ' × ' + cs.height,
-      filter: cs.filter || 'none',
-      anim: cs.animationName
+      nightSky: ns
+        ? { opacity: nsCs.opacity, transition: nsCs.transitionProperty + ' / ' + nsCs.transitionDuration }
+        : 'missing',
+      meteors: [...document.querySelectorAll('.meteor')].map(m => {
+        const cs = getComputedStyle(m);
+        return {
+          cls: m.className, size: cs.width + '×' + cs.height,
+          mx: cs.getPropertyValue('--mx').trim(), my: cs.getPropertyValue('--my').trim(),
+          mdx: cs.getPropertyValue('--mdx').trim(), mdy: cs.getPropertyValue('--mdy').trim(),
+          rot: cs.getPropertyValue('--mrot').trim(),
+          dur: cs.getPropertyValue('--dur').trim(), delay: cs.getPropertyValue('--delay').trim(),
+          anim: cs.animationName
+        };
+      })
     };
   });
-  console.log('\n=== 流星参数（夜空主题）===');
-  console.log(JSON.stringify(meteorInfo, null, 2));
+  console.log('\n=== 夜空层与流星参数 ===');
+  console.log(JSON.stringify(skyInfo, null, 2));
 
-  /* 流星只在动画的 5%~16% 时段可见，直接截图多半扑空 —— 定格到那一帧再看 */
+  /* 定格到可见时段：用 Web Animations 的 currentTime 直接设进度。
+     之前用 animation-delay + play-state，实测会停在 0% 帧（opacity 0）。
+     注意要加上各自的 delay，否则还在延迟期内、进度仍是 0。 */
   await page.evaluate(() => {
-    const m = document.querySelector('.meteor');
-    if (m) { m.style.animationDelay = '-1.3s'; m.style.animationPlayState = 'paused'; }
+    document.querySelectorAll('.meteor').forEach((m, i) => {
+      const a = m.getAnimations ? m.getAnimations()[0] : null;
+      if (!a) return;
+      const delay = (a.effect.getComputedTiming().delay) || 0;
+      a.pause();
+      a.currentTime = delay + 1100 + i * 80;
+    });
   });
-  await wait(320);
+  await wait(220);
+  const frozen = await page.evaluate(() => [...document.querySelectorAll('.meteor')].map(m => {
+    const cs = getComputedStyle(m);
+    const r = m.getBoundingClientRect();
+    return {
+      cls: m.className, opacity: cs.opacity,
+      x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width)
+    };
+  }));
+  console.log('定格状态:', JSON.stringify(frozen, null, 1));
   await page.screenshot({ path: path.join(OUT, '10-meteor.png') });
   await page.evaluate(() => {
-    const m = document.querySelector('.meteor');
-    if (m) { m.style.animationDelay = ''; m.style.animationPlayState = ''; }
+    document.querySelectorAll('.meteor').forEach(m => {
+      (m.getAnimations ? m.getAnimations() : []).forEach(a => a.play());
+    });
   });
 
   await page.click('#btnTheme');

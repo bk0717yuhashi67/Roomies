@@ -14,6 +14,9 @@
    切换机制：data-theme="day" | "night"，由时间自动决定并可手动覆盖
    ============================================================ */
 :root{
+  /* 注意：--ease 之前漏了定义，导致 17 处 transition 整条声明被丢弃
+     （引用未定义变量 = 该声明失效，属性退回初始值），昼夜切换因此是硬跳变。 */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);            /* 标准缓动：hover / 颜色 / 透明度 */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -74,9 +77,12 @@ body{
   margin:0; min-height:100dvh; color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
   font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased;
-  background:linear-gradient(170deg,var(--sky-1) 0%,var(--sky-2) 42%,var(--sky-3) 78%,var(--sky-4) 100%);
+  /* 注意：linear-gradient 不能参与 transition（渐变不可插值），
+     所以这里把底色固定为白天色，夜晚交给 .night-sky 覆盖层淡入 ——
+     只写 transition:background 是没有效果的，那正是之前切换会「跳」的原因。 */
+  background:linear-gradient(170deg,#BEE4F7 0%,#DCEEF8 42%,#FFF7E8 78%,#FFEEDA 100%);
   background-attachment:fixed;
-  transition:color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+  transition:color var(--dur-base) var(--ease);
   overflow-x:hidden;
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
@@ -90,6 +96,14 @@ a{color:var(--primary)}
    ============================================================ */
 .sky{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 .sky > *{position:absolute;will-change:transform,opacity}
+/* 夜晚底色：单独一层，用 opacity 过渡。
+   渐变不能参与 transition，所以昼夜切换只能靠「两层叠加 + 淡入淡出」来实现 */
+.night-sky{
+  inset:0;
+  background:linear-gradient(170deg,#070B1A 0%,#111A33 42%,#1B2748 78%,#2A2145 100%);
+  opacity:0;transition:opacity 560ms var(--ease);
+}
+[data-theme="night"] .night-sky{opacity:1}
 
 /* 太阳 */
 .sun{
@@ -142,22 +156,28 @@ a{color:var(--primary)}
 @keyframes twinkle{0%,100%{opacity:.22;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
 
 /* 流星 */
-/* 流星：短、淡、位置与轨迹随机；方向固定向右下。
-   旋转角度由 JS 按视口实际比例算好 —— 否则 vw/vh 比例不同会让尾巴与轨迹错开。
-   去掉了 drop-shadow：它是「太亮太扎眼」的主因。 */
+/* 流星：三颗固定位置轮流出场。
+   之前是「单颗 + 每轮 JS 随机」，13 秒才出现一次、每次只亮一秒多，实测等不到，
+   所以改成多颗错峰循环，位置写死在 CSS，出现频率提到几秒一次。
+   方向固定向右下；旋转角度由 JS 按视口比例补算（见 client-ui.js），保证轨迹与倾角一致。 */
 .meteor{
-  width:86px;height:1.5px;border-radius:2px;top:0;left:0;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.45));
+  width:90px;height:2px;border-radius:2px;top:0;left:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.9));
   opacity:0;transform-origin:100% 50%;
+  --dur:8s;--delay:0s;
 }
+/* 轨迹终点都落在视口内（起始 + 位移 ≤ 85vw），避免「飞出去了才亮」 */
+.meteor.m1{--mx:-4vw;--my:2vh;--mdx:52vw;--mdy:34vh;--dur:7s;--delay:0s}
+.meteor.m2{--mx:16vw;--my:-4vh;--mdx:46vw;--mdy:38vh;--dur:9s;--delay:2.2s}
+.meteor.m3{--mx:38vw;--my:6vh;--mdx:40vw;--mdy:28vh;--dur:11s;--delay:4.6s}
 @keyframes meteor{
-  0%{opacity:0;transform:translate3d(var(--mx,-12vw), var(--my,6vh), 0) rotate(var(--mrot,42deg))}
-  4%{opacity:.7}
-  13%{opacity:0;transform:translate3d(calc(var(--mx,-12vw) + var(--mdx,68vw)), calc(var(--my,6vh) + var(--mdy,50vh)), 0) rotate(var(--mrot,42deg))}
-  100%{opacity:0;transform:translate3d(calc(var(--mx,-12vw) + var(--mdx,68vw)), calc(var(--my,6vh) + var(--mdy,50vh)), 0) rotate(var(--mrot,42deg))}
+  0%{opacity:0;transform:translate3d(var(--mx,0), var(--my,0), 0) rotate(var(--mrot,36deg))}
+  6%{opacity:1}
+  28%{opacity:0;transform:translate3d(calc(var(--mx,0) + var(--mdx,50vw)), calc(var(--my,0) + var(--mdy,34vh)), 0) rotate(var(--mrot,36deg))}
+  100%{opacity:0;transform:translate3d(calc(var(--mx,0) + var(--mdx,50vw)), calc(var(--my,0) + var(--mdy,34vh)), 0) rotate(var(--mrot,36deg))}
 }
-/* 只在夜空播放 —— 白天完全不参与绘制 */
-[data-theme="night"] .sky .meteor{animation:meteor 13s linear infinite}
+/* 只在夜空播放 */
+[data-theme="night"] .sky .meteor{animation:meteor var(--dur,8s) linear infinite var(--delay,0s)}
 
 /* 主题可见性：晴天才显示太阳与云，夜空才显示月亮与星 */
 .sky .sun,.sky .cloud{opacity:1;transition:opacity 520ms var(--ease)}
@@ -347,24 +367,6 @@ a{color:var(--primary)}
 }
 .seg-i.on{background:var(--glass-strong);color:var(--ink);box-shadow:0 3px 10px -4px rgba(0,0,0,.22)}
 .seg-i:active{transform:scale(.97)}
-
-/* 首页的邀请码引导卡 */
-.invite-tip{border-color:color-mix(in srgb,var(--primary) 26%,var(--glass-brd))}
-.invite-tip .code-row{display:flex;align-items:center;gap:10px;margin-top:14px}
-.invite-tip .code{
-  flex:1;padding:13px 14px;border-radius:14px;text-align:center;
-  font-size:23px;font-weight:800;letter-spacing:7px;text-indent:7px;
-  background:var(--glass-strong);border:1px dashed color-mix(in srgb,var(--primary) 38%,transparent);
-  color:var(--ink);font-variant-numeric:tabular-nums;
-}
-.x-btn{
-  width:26px;height:26px;flex:0 0 auto;border-radius:50%;border:none;cursor:pointer;
-  background:var(--line-2);color:var(--ink-3);font-size:15px;line-height:1;
-  display:flex;align-items:center;justify-content:center;
-  transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-press) var(--ease-out);
-}
-.x-btn:active{transform:scale(.9)}
-@media (hover:hover) and (pointer:fine){.x-btn:hover{background:var(--line);color:var(--ink-2)}}
 
 /* 密码强度 */
 .pw-meter{display:flex;gap:5px;margin-top:8px}
@@ -623,6 +625,7 @@ body.sheet-open .toast.on{transform:translate(-50%,0)}
 
 <!-- 天空装饰层 -->
 <div class="sky" aria-hidden="true">
+  <div class="night-sky"></div>
   <div class="horizon"></div>
   <div class="sun"></div>
   <div class="moon"></div>
@@ -630,7 +633,9 @@ body.sheet-open .toast.on{transform:translate(-50%,0)}
   <div class="cloud c2"></div>
   <div class="cloud c3"></div>
   <div class="stars" id="stars"></div>
-  <div class="meteor"></div>
+  <div class="meteor m1"></div>
+  <div class="meteor m2"></div>
+  <div class="meteor m3"></div>
 </div>
 
 <!-- 登录/注册 -->

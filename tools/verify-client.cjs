@@ -107,8 +107,9 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     /* 账号菜单 */
     click(d, '#btnAccount'); await wait(80);
     const sheet = q(d, '#modalRoot .sheet');
-    check('账号菜单可打开', !!sheet && /当前身份/.test(sheet.innerHTML));
+    check('账号菜单可打开', !!sheet && /房屋成员/.test(sheet.innerHTML));
     check('账号菜单显示房屋邀请码', !!sheet && /房屋邀请码/.test(sheet.innerHTML));
+    check('账号菜单不再提供身份切换', !!sheet && !/data-act="switchMe"/.test(sheet.innerHTML));
     click(d, '#modalRoot .mask'); await wait(50);
 
     check('无运行时错误', errors.length === 0, errors.join(' | '));
@@ -218,14 +219,13 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     check('房屋已自动生成邀请码', /^[A-Z2-9]{6}$/.test((st.house || {}).inviteCode || ''), (st.house || {}).inviteCode);
     check('顶栏显示的是本人房屋', /新人/.test(q(d, '#houseName').textContent), q(d, '#houseName').textContent);
 
-    /* 新建房屋：首页就该把邀请码摆出来，而不是让用户自己去账号菜单里翻 */
-    const vHtml = () => q(d, '#view').innerHTML;
-    check('新房屋首页显示邀请码引导卡', /把邀请码发给室友/.test(vHtml()));
-    check('引导卡里直接显示那 6 位邀请码', new RegExp((st.house || {}).inviteCode || 'x').test(vHtml()));
-    click(d, '[data-act="hideTip"]'); await wait(120);
-    check('引导卡可以收起', !/把邀请码发给室友/.test(vHtml()));
-    const st2 = JSON.parse(dump(dom)['roomies_data_' + acc.id] || '{}');
-    check('收起状态已写入数据（刷新后不会又冒出来）', st2.hideInviteTip === true, String(st2.hideInviteTip));
+    /* 首页不再放大号邀请卡（已按要求移除），邀请码只保留在账号菜单里 */
+    check('首页不再出现大号邀请卡', !/把邀请码发给室友/.test(q(d, '#view').innerHTML));
+    click(d, '#btnAccount'); await wait(100);
+    const accSheetG = q(d, '#modalRoot .sheet');
+    check('邀请码仍在账号菜单里可查', !!accSheetG && accSheetG.innerHTML.indexOf(st.house.inviteCode) >= 0, st.house.inviteCode);
+    check('账号菜单不再有身份切换按钮', !!accSheetG && !/data-act="switchMe"/.test(accSheetG.innerHTML));
+    click(d, '#modalRoot .mask'); await wait(80);
 
     check('无运行时错误', errors.length === 0, errors.join(' | '));
   }
@@ -277,7 +277,6 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     check('加入者不会覆盖屋主填的房屋名', (shared.house || {}).name === '测试小屋', (shared.house || {}).name);
     check('室友账号不带自己的房屋名（用屋主的）', !mate.houseName, JSON.stringify(mate.houseName));
     check('室友进入后当前身份是自己', /室友/.test(q(d, '#houseSub').textContent), q(d, '#houseSub').textContent);
-    check('房屋不再只有自己时，引导卡自动消失', !/把邀请码发给室友/.test(q(d, '#view').innerHTML));
     check('无运行时错误', errors.length === 0, errors.join(' | '));
 
     /* 错误邀请码 */
@@ -314,7 +313,19 @@ const submit = (d, sel) => { const f = q(d, sel); if (!f) throw new Error('找�
     const sm = html.match(/makeStars\((\d+)\)/);
     check('星星数量受控（<= 32 颗）', !!sm && Number(sm[1]) <= 32, sm ? sm[1] + ' 颗' : '未找到');
     check('存在视图切换过渡动画（区块错峰）', /@keyframes secIn/.test(html) && /function viewIn\(\)/.test(html));
-    check('流星向右下移动（垂直位移由角度反算，非固定水平）', /--mdy/.test(html) && /Math\.tan\(deg/.test(html));
+    check('流星有多颗且只向右下移动', (html.match(/class="meteor m\d"/g) || []).length >= 3 && /--mdy/.test(html));
+    check('流星倾角按视口比例换算（不是写死角度）', /Math\.atan2\(mdy/.test(html));
+    check('昼夜切换用覆盖层做过渡（渐变本身不能 transition）', /night-sky/.test(html) && /transition:opacity 560ms/.test(html));
+
+    /* 防御性检查：var() 引用了未定义的变量，整条声明会被丢弃 ——
+       这个坑真踩过（--ease 漏定义，17 处过渡一起失效，昼夜切换变成硬跳变）。
+       带 fallback 的 var(--x, ...) 不算硬依赖，要排除。 */
+    const definedVars = new Set([...html.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(m => m[1]));
+    const usedVars = [...html.matchAll(/var\((--[a-z0-9-]+)\s*([,)])/g)]
+      .filter(m => m[2] === ')')
+      .map(m => m[1]);
+    const missingVars = [...new Set(usedVars)].filter(v => !definedVars.has(v));
+    check('没有引用未定义的 CSS 变量', missingVars.length === 0, missingVars.join(', ') || '全部已定义');
     check('弹层有退出动画与降级保护', /dataset\.closing/.test(html) && /typeof sheet\.animate !== 'function'/.test(html));
     check('新账号初始化会清空公约', /s\.pacts = \[\]/.test(html));
   }
