@@ -10,32 +10,36 @@
 let logoSeq = 0;
 function logoSVG() {
   const n = 'lg' + (++logoSeq);
-  /* 一个屋檐，两半光景：屋顶是白天，房身是夜晚。
-     用「房子」做主体 —— 它同时说清了「同一个屋檐下」和「合租」。
-     月亮放在房身内部，完整不被裁切（旧版用 clipPath 裁到下半圆，月亮被切掉一块）。 */
-  return `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  /* 一枚徽章装下「同一个屋檐下的白天与夜晚」：
+     外圈是太阳的光（白天在屋外），圆环内是月亮与星（夜晚在檐下），房子居正中、门与圆环相连。
+     淡黄轻微渐变 —— 浅底靠下端暖金保住轮廓，深底靠上端奶黄自然发光，昼夜两套主题都清晰。
+     全图为同一支等粗圆头线 + 同色实心点缀，单色即可完整表达。 */
+  return `<svg viewBox="0 0 128 128" fill="none" aria-hidden="true">
   <defs>
-    <linearGradient id="${n}sun" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFE9A8"/><stop offset=".55" stop-color="#FFC24B"/><stop offset="1" stop-color="#F2921D"/>
+    <linearGradient id="${n}g" gradientUnits="userSpaceOnUse" x1="64" y1="6" x2="64" y2="122">
+      <stop offset="0" stop-color="#FFF6D8"/><stop offset=".5" stop-color="#FADC96"/><stop offset="1" stop-color="#EEB042"/>
     </linearGradient>
-    <linearGradient id="${n}night" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#243257"/><stop offset="1" stop-color="#080D1E"/>
-    </linearGradient>
-    <clipPath id="${n}house"><path d="M32 13 53 30.5 53 52 11 52 11 30.5Z"/></clipPath>
+    <mask id="${n}m" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+      <rect width="128" height="128" fill="#fff"/>
+      <circle cx="92.6" cy="44.4" r="10" fill="#000"/>
+    </mask>
   </defs>
-
-  <g clip-path="url(#${n}house)">
-    <rect x="8" y="8" width="48" height="23" fill="url(#${n}sun)"/>
-    <rect x="8" y="31" width="48" height="24" fill="url(#${n}night)"/>
-    <circle cx="24" cy="42" r="6.4" fill="#F7F2DC"/>
-    <circle cx="19.7" cy="39.4" r="5.5" fill="#0E1730"/>
-    <circle class="lg-star" cx="38.5" cy="39.5" r="1.5" fill="#fff"/>
-    <circle class="lg-star b" cx="44.5" cy="45.5" r="1.1" fill="#fff"/>
-    <circle cx="35" cy="48.5" r="0.9" fill="#fff" opacity=".8"/>
+  <g fill="none" stroke="url(#${n}g)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="64" cy="64" r="38"/>
+    <path d="M111 64h11M64 111v11M17 64H6M64 17V6"/>
+    <path d="M97.2 97.2l4.3 4.3M30.8 97.2l-4.3 4.3M30.8 30.8l-4.3-4.3M97.2 30.8l4.3-4.3" stroke-width="5"/>
+    <path d="M37 73 64 47 91 73"/>
+    <path d="M45 71v23M83 71v23"/>
+    <path d="M57 97v-9a7 7 0 0 1 14 0v9"/>
   </g>
-
-  <path d="M32 13 53 30.5 53 52 11 52 11 30.5Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M11 30.5h42" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <g fill="url(#${n}g)">
+    <circle cx="116.7" cy="85.8" r="2.6"/><circle cx="85.8" cy="116.7" r="2.6"/>
+    <circle cx="42.2" cy="116.7" r="2.6"/><circle cx="11.3" cy="85.8" r="2.6"/>
+    <circle cx="11.3" cy="42.2" r="2.6"/><circle cx="42.2" cy="11.3" r="2.6"/>
+    <circle cx="85.8" cy="11.3" r="2.6"/><circle cx="116.7" cy="42.2" r="2.6"/>
+    <path class="lg-star" d="M42.2 45.6q.76 5.05 5.8 5.8-5.04.76-5.8 5.8-.76-5.04-5.8-5.8 5.04-.76 5.8-5.8Z"/>
+    <circle cx="87.9" cy="49.2" r="9" mask="url(#${n}m)"/>
+  </g>
 </svg>`;
 }
 
